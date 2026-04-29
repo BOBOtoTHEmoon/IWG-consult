@@ -122,7 +122,7 @@ export default function Footer() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-light.png"
+                src="/logo.png"
                 alt="IWG Consult"
                 className="h-10 lg:h-11 w-auto"
                 onError={(e) => {

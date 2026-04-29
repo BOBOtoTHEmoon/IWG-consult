@@ -68,7 +68,7 @@ export default function Navbar() {
             href="/start-brief"
             className={`hidden lg:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] tracking-wide transition-all duration-500 ${
               isLight
-                ? "bg-[var(--color-ink)] text-[var(--color-cream)] hover:bg-[var(--color-ochre)]"
+                ? "bg-[var(--color-cream)] text-[var(--color-ink)] hover:bg-[var(--color-ochre)]"
                 : "bg-[var(--color-cream)] text-[var(--color-ink)] hover:bg-[#f5d6a8]"
             }`}
           >
@@ -77,7 +77,7 @@ export default function Navbar() {
           <button
             onClick={() => setOpen(!open)}
             className={`lg:hidden grid place-items-center w-10 h-10 transition-colors duration-500 ${
-              isLight ? "text-[var(--color-ink)]" : "text-[var(--color-cream)]"
+              isLight ? "text-[var(--color-ink)]" : "text-[var(--color-ink)]"
             }`}
             aria-label="Menu"
           >

@@ -9,7 +9,7 @@ import {
   Sofa,
   Gift,
   Check,
-  FileText,
+  Shirt,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -95,22 +95,23 @@ const services = [
     commission: "5%",
     href: "/start-brief",
   },
-  {
-    id: "custom",
-    icon: FileText,
-    name: "Custom Package",
-    shortName: "Custom",
-    tag: "Tailored solutions",
-    image: "/services/custom.jpg",
+ {
+    id: "wardrobe",
+    icon: Shirt,
+    name: "Wardrobe Package",
+    shortName: "Wardrobe",
+    tag: "Personal style",
+    image:
+      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=900&fit=crop&q=85",
     description:
-      "Placeholder description — edit me. Tell visitors who this package is for and what makes it different.",
+      "For individuals who want to upgrade their wardrobe — clothes, shoes, bags and accessories for personal use.",
     features: [
-      "Feature one — edit me",
-      "Feature two — edit me",
-      "Feature three — edit me",
-      "Feature four — edit me",
+      "Direct-from-supplier sourcing",
+      "Unique pieces in your exact size & taste",
+      "Quality verified before shipping",
+      "Discreet packaging & UK delivery",
     ],
-    fee: "£???",
+    fee: "£200",
     commission: "5%",
     href: "/start-brief",
   },
