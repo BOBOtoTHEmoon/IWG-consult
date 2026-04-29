@@ -81,49 +81,48 @@ export default function Process() {
     return () => unsub();
   }, [scrollYProgress]);
 
-  return (
-    <section id="process" className="py-20 lg:py-28">
+ return (
+    <section id="process" className="py-14 lg:py-28">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         {/* Centered header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-20">
-          <p className="text-[11px] tracking-[0.18em] uppercase text-[var(--color-stone)] font-semibold mb-5">
+        <div className="text-center max-w-3xl mx-auto mb-10 lg:mb-20">
+          <p className="text-[11px] tracking-[0.18em] uppercase text-[var(--color-stone)] font-semibold mb-4">
             How it works
           </p>
-          <h2 className="text-4xl lg:text-6xl leading-[1] tracking-[-0.025em]">
+          <h2 className="text-3xl sm:text-4xl lg:text-6xl leading-[1.05] tracking-[-0.025em]">
             Your journey from{" "}
             <span className="text-[var(--color-ochre)] font-medium">
               factory
             </span>{" "}
             to front door.
           </h2>
-          <p className="text-[var(--color-ink-soft)] text-base leading-relaxed mt-8 max-w-xl mx-auto">
-            Four stages. One consultant. Full visibility from quote to delivery —
-            every brief follows the same disciplined process.
+          <p className="text-[var(--color-ink-soft)] text-sm lg:text-base leading-relaxed mt-5 lg:mt-8 max-w-xl mx-auto">
+            Four stages. One consultant. Full visibility from quote to delivery.
           </p>
-        </div>
+        </div> 
 
-        {/* Tracker */}
+       {/* Tracker */}
         <div
           ref={containerRef}
           className="relative max-w-4xl mx-auto"
         >
           {/* Background line */}
-          <div className="absolute left-[27px] lg:left-[31px] top-4 bottom-4 w-[2px] bg-[var(--color-line)]" />
+          <div className="absolute left-[19px] lg:left-[31px] top-4 bottom-4 w-[2px] bg-[var(--color-line)]" />
 
           {/* Animated ochre fill line */}
           <motion.div
-            className="absolute left-[27px] lg:left-[31px] top-4 w-[2px] bg-[var(--color-ochre)] origin-top"
+            className="absolute left-[19px] lg:left-[31px] top-4 w-[2px] bg-[var(--color-ochre)] origin-top"
             style={{ height: lineHeight }}
           />
 
           {/* Steps */}
-          <div className="space-y-8 lg:space-y-12">
+          <div className="space-y-5 lg:space-y-12"> 
             {steps.map((step, i) => {
               const isReached = i <= activeStep;
               const isCurrent = i === activeStep;
 
               return (
-                <motion.div
+              <motion.div
                   key={step.n}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -133,8 +132,8 @@ export default function Process() {
                     delay: i * 0.05,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  className="relative grid grid-cols-[60px_1fr] lg:grid-cols-[68px_1fr_180px] gap-4 lg:gap-8 items-start"
-                >
+                  className="relative grid grid-cols-[44px_1fr] lg:grid-cols-[68px_1fr_180px] gap-3 lg:gap-8 items-start"
+                >  
                   {/* Dot */}
                   <div className="relative pt-1.5 z-10">
                     <motion.div
@@ -174,17 +173,26 @@ export default function Process() {
                         )}
                       </p>
                     </div>
-                    <h3 className="text-2xl lg:text-3xl tracking-[-0.02em] leading-tight mb-3">
+                   <h3 className="text-lg sm:text-xl lg:text-3xl tracking-[-0.02em] leading-tight mb-2 lg:mb-3">
                       {step.title}
                     </h3>
-                    <p className="text-[var(--color-ink-soft)] text-[14px] lg:text-[15px] leading-relaxed max-w-xl">
+                    <p className="text-[var(--color-ink-soft)] text-[13px] lg:text-[15px] leading-relaxed max-w-xl">
                       {step.body}
                     </p>
-                    {/* Accent chip */}
-                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-paper)] border border-[var(--color-line)] text-[11px] text-[var(--color-ink-soft)]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-ochre)]" />
-                      {step.accent}
-                    </div>
+                    {/* Accent chip + mobile time inline */}
+                    <div className="mt-3 lg:mt-4 flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[var(--color-paper)] border border-[var(--color-line)] text-[10px] lg:text-[11px] text-[var(--color-ink-soft)]">
+                        <span className="w-1 h-1 rounded-full bg-[var(--color-ochre)]" />
+                        {step.accent}
+                      </div>
+                      {/* Time shown inline on mobile */}
+                      <div className="lg:hidden inline-flex items-center gap-1.5 text-[10px] text-[var(--color-stone)]">
+                        <span className="number-display text-sm text-[var(--color-ochre)]">
+                          {step.duration}
+                        </span>
+                        <span>· {step.durationLabel}</span>
+                      </div>
+                    </div> 
                   </div>
 
                   {/* Time/right column — desktop only */}
@@ -201,13 +209,13 @@ export default function Process() {
             })}
           </div>
 
-          {/* Bottom destination marker */}
+         {/* Bottom destination marker */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative grid grid-cols-[60px_1fr] lg:grid-cols-[68px_1fr_180px] gap-4 lg:gap-8 items-center mt-10 lg:mt-14 pt-8 border-t border-dashed border-[var(--color-line)]"
+            className="relative grid grid-cols-[44px_1fr] lg:grid-cols-[68px_1fr_180px] gap-3 lg:gap-8 items-center mt-6 lg:mt-14 pt-5 lg:pt-8 border-t border-dashed border-[var(--color-line)]"
           >
             <div className="relative pt-1 z-10">
               <div className="w-[18px] h-[18px] rounded-full grid place-items-center bg-[var(--color-ink)] border-2 border-[var(--color-ink)]">
@@ -218,7 +226,7 @@ export default function Process() {
               <p className="text-[10px] tracking-[0.18em] uppercase text-[var(--color-stone)] mb-1">
                 Destination
               </p>
-              <h3 className="text-2xl lg:text-3xl tracking-[-0.02em]">
+              <h3 className="text-lg sm:text-xl lg:text-3xl tracking-[-0.02em]">
                 Your front door.
               </h3>
             </div>
@@ -226,7 +234,7 @@ export default function Process() {
               <Plane className="w-4 h-4" />
               <Anchor className="w-4 h-4" />
             </div>
-          </motion.div>
+          </motion.div> 
         </div>
       </div>
     </section>
