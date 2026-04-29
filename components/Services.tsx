@@ -63,7 +63,7 @@ const services = [
     tag: "Homeowners & hosts",
     image: "/services/home.png",
     description:
-      "Perfect for home projects and bulk imports — for homeowners, Airbnb hosts & interior brands.",
+      "Perfect for home projects and bulk imports, for homeowners, Airbnb hosts & interior brands.",
     features: [
       "Furniture, lighting, décor & appliance sourcing",
       "Supplier verification",
@@ -83,7 +83,7 @@ const services = [
     tag: "Events & gifting",
     image: "/services/souvenaire.png",
     description:
-      "Ideal for weddings, corporate gifts & special events — custom & non-custom souvenirs.",
+      "Ideal for weddings, corporate gifts & special events.",
     features: [
       "Custom & non-custom souvenir sourcing",
       "Logo & design coordination (if applicable)",
@@ -104,7 +104,7 @@ const services = [
     image:
       "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=900&fit=crop&q=85",
     description:
-      "For individuals who want to upgrade their wardrobe — clothes, shoes, bags and accessories for personal use.",
+      "For individuals who want to upgrade their wardrobe with clothes, shoes, bags and accessories for personal use.",
     features: [
       "Direct-from-supplier sourcing",
       "Unique pieces in your exact size & taste",
@@ -278,7 +278,7 @@ export default function Services() {
                   <div className="flex items-end justify-center lg:justify-start gap-5 lg:gap-6 mb-4 lg:mb-0">
                     <div className="text-center lg:text-left">
                       <p className="text-[10px] tracking-[0.16em] uppercase text-[var(--color-stone)] mb-1">
-                        Sourcing fee
+                        processing fee
                       </p>
                       <p className="number-display text-2xl lg:text-3xl text-[var(--color-ochre)]">
                         {active.fee}

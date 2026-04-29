@@ -21,6 +21,14 @@ import {
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
+const STRIPE_PAYMENT_LINKS: Record<string, string> = {
+  business: "https://buy.stripe.com/REPLACE_WITH_BUSINESS_LINK",
+  home: "https://buy.stripe.com/REPLACE_WITH_HOME_LINK",
+  baby: "https://buy.stripe.com/REPLACE_WITH_BABY_LINK",
+  souvenirs: "https://buy.stripe.com/REPLACE_WITH_SOUVENIRS_LINK",
+  wardrobe: "https://buy.stripe.com/REPLACE_WITH_WARDROBE_LINK",
+  unsure: "", // No payment link — just skip redirect
+};
 const packages = [
   { id: "business", name: "Sourcing for Business", icon: Building2, fee: "£250" },
   { id: "home", name: "Home & Décor", icon: Sofa, fee: "£300" },
@@ -75,6 +83,7 @@ export default function BriefForm() {
 
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
 
   const update = (key: keyof typeof form, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -139,17 +148,42 @@ export default function BriefForm() {
     });
   };
 
-  const handleSubmit = async () => {
+ const handleSubmit = async () => {
     setSubmitting(true);
-    // TODO: wire up backend here later
-    // const formData = new FormData();
-    // Object.entries(form).forEach(([k, v]) => formData.append(k, v));
-    // files.forEach((f) => formData.append("files", f.file));
-    // await fetch("/api/submit-brief", { method: "POST", body: formData });
+    setSubmitError("");
 
-    await new Promise((r) => setTimeout(r, 1400));
-    setSubmitting(false);
-    setSubmitted(true);
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      files.forEach((f) => fd.append("files", f.file));
+
+      const res = await fetch("/api/submit-brief", {
+        method: "POST",
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Submission failed");
+      }
+
+      setSubmitting(false);
+      setSubmitted(true);
+
+      // Redirect to Stripe Payment Link after 2.5s (gives user time to see success state)
+      const paymentUrl = STRIPE_PAYMENT_LINKS[form.packageId];
+      if (paymentUrl) {
+        setTimeout(() => {
+          window.location.href = paymentUrl;
+        }, 2500);
+      }
+    } catch (err) {
+      setSubmitting(false);
+      setSubmitError(
+        (err as Error).message ||
+          "Something went wrong. Please try again or email us directly."
+      );
+    }
   };
 
   const formatBytes = (bytes: number) => {
@@ -190,9 +224,21 @@ export default function BriefForm() {
             className="text-[var(--color-ink-soft)] text-base leading-relaxed mb-10 max-w-md mx-auto"
           >
             We've got your details and we'll come back with first supplier matches
-            inside ten working days. Check your inbox at{" "}
-            <span className="text-[var(--color-ink)]">{form.email}</span> for a
-            confirmation.
+            inside ten working days.
+            {STRIPE_PAYMENT_LINKS[form.packageId] ? (
+              <>
+                {" "}
+                Redirecting you to secure payment for the sourcing fee in a few
+                seconds...
+              </>
+            ) : (
+              <>
+                {" "}
+                Check your inbox at{" "}
+                <span className="text-[var(--color-ink)]">{form.email}</span>{" "}
+                for a confirmation.
+              </>
+            )}
           </motion.p>
           <motion.a
             initial={{ opacity: 0, y: 16 }}
@@ -528,6 +574,13 @@ export default function BriefForm() {
               </motion.div>
             )}
           </AnimatePresence>
+
+         {/* Submission error */}
+          {submitError && (
+            <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+              {submitError}
+            </div>
+          )}
 
           {/* Nav buttons */}
           <div className="mt-10 pt-6 border-t border-[var(--color-line)] flex items-center justify-between gap-4">

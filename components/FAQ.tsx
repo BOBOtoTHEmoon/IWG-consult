@@ -6,30 +6,30 @@ import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 
 const faqs = [
-  {
-    q: "What does the sourcing fee cover?",
-    a: "Supplier discovery, factory verification, sample coordination, price negotiation, production follow-up and quality checks. The 5% commission applies to goods shipped — never on quotes that don't proceed.",
-  },
-  {
-    q: "How long does the process take?",
-    a: "From brief to first quote: 5–10 working days. Full sourcing-to-delivery depends on your product and shipping mode — most orders land 4–10 weeks after sample approval.",
-  },
-  {
-    q: "How much will everything cost?",
-    a: "A one-time sourcing fee (£150–£300 by package), 5% commission on goods value, plus the actual cost of products and freight. No hidden margins — you see every quote we receive.",
-  },
-  {
-    q: "Do you handle shipping and customs?",
-    a: "Yes. We coordinate sea or air freight, prepare commercial paperwork, and connect you with a UK customs broker for duties and VAT.",
-  },
-  {
-    q: "How will we communicate?",
-    a: "WhatsApp or email — your choice. Direct contact with your consultant throughout the brief, with weekly photo updates during production.",
-  },
-  {
-    q: "Is the sourcing fee refundable?",
-    a: "If we can't find suppliers that meet your brief within 14 days, the fee is fully refunded. Otherwise non-refundable once supplier work begins.",
-  },
+ {
+  q: "What does the sourcing fee cover?",
+  a: "It covers supplier discovery, factory verification, sample coordination, price negotiation, production follow up, and quality checks. The 5% commission applies only to goods that are shipped and never to quotes that do not proceed.",
+},
+{
+  q: "How long does the process take?",
+  a: "The time from brief to first quote is typically 5 to 10 working days. Full sourcing and delivery timelines depend on your product and shipping method, but most orders arrive within 4 to 10 weeks after sample approval.",
+},
+{
+  q: "How much will everything cost?",
+  a: "Costs include a one time sourcing fee of £150 to £300 depending on the package, a 5% commission on goods value, plus the actual cost of products and freight. There are no hidden margins, and you will see every quote we receive.",
+},
+{
+  q: "Do you handle shipping and customs?",
+  a: "Yes. We coordinate sea or air freight, prepare commercial paperwork, and connect you with a UK customs broker for duties and VAT.",
+},
+{
+  q: "How will we communicate?",
+  a: "Communication is via WhatsApp or email, whichever you prefer. You will have direct contact with your consultant throughout the process, along with weekly photo updates during production.",
+},
+{
+  q: "Is the sourcing fee refundable?",
+  a: "If we cannot find suppliers that meet your brief within 14 days, the fee is fully refunded. Otherwise, the fee becomes non refundable once supplier work begins.",
+},
 ];
 
 function FAQItem({

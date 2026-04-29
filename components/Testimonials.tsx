@@ -16,7 +16,7 @@ const testimonials = [
   },
   {
     quote:
-      "We needed 800 branded gift boxes for a corporate event with a tight 6-week window. IWG handled everything — sample approval, production, customs — landed two days early.",
+      "We needed 800 branded gift boxes for a corporate event with a tight 6 week window. IWG handled everything, including sample approval, production, and customs, and the boxes landed two days early.",
     name: "Adaeze O.",
     role: "Event planner, Birmingham",
     image:
@@ -34,7 +34,7 @@ const testimonials = [
   },
   {
     quote:
-      "Furnished a four-bedroom Airbnb top to bottom — sofas, beds, lighting, decor — for less than half what I'd budgeted locally. Quality matched the photos.",
+      "Furnished a four bedroom Airbnb from top to bottom with sofas, beds, lighting, and decor for less than half of what I had budgeted locally. The quality matched the photos.",
     name: "Tunde K.",
     role: "Short-stay host, Manchester",
     image:
@@ -52,7 +52,7 @@ const testimonials = [
   },
   {
     quote:
-      "Saved us roughly 35% on the BoM versus our previous local supplier — same quality, faster delivery. The freight visibility alone is worth the fee.",
+      "We saved roughly 35% on the BoM compared with our previous local supplier while maintaining the same quality and receiving faster delivery. The freight visibility alone is worth the fee.",
     name: "Chika E.",
     role: "Operations lead, retail brand",
     image:
