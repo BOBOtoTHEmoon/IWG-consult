@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error("RESEND_API_KEY is not set");
+  }
+  return new Resend(key);
+}
 
 const PACKAGE_NAMES: Record<string, string> = {
   business: "Sourcing for Business",
@@ -92,7 +101,8 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // Send via Resend
+    // Send via Resend (initialized lazily so build doesn't crash if key missing)
+    const resend = getResend();
     const result = await resend.emails.send({
       from: process.env.BRIEF_FROM_EMAIL || "briefs@importwithgoody.com",
       to: process.env.BRIEF_RECIPIENT_EMAIL || "",

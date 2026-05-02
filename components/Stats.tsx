@@ -78,15 +78,15 @@ export default function Stats() {
             Why IWG
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-6xl leading-[1.05] tracking-[-0.025em]">
-            Seven years.{" "}
+           In Seven years.{" "}
             <span className="text-[var(--color-ochre)] font-medium">
               Over £100k
             </span>{" "}
-            in orders managed.
+            orders within our management.
           </h2>
           <p className="text-[var(--color-ink-soft)] text-sm lg:text-base leading-relaxed mt-5 lg:mt-8 max-w-xl mx-auto">
-            Most sourcing agents disappear after the deposit clears. We don't.
-            Every brief gets one consultant, one channel, one schedule.
+            Your trusted procurement partner.
+            We handle everything from China so you don't have to.
           </p>
         </div>
 

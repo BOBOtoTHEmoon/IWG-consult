@@ -38,11 +38,11 @@ export default function Hero() {
         >
           We source,{" "}
           <span className="text-[var(--color-ochre)] font-medium">
-            verify
+           we verify
           </span>{" "}
           &amp;
           <br />
-          ship the world's best.
+          ship to you worldwide.
         </motion.h1>
 
         <motion.p
@@ -55,8 +55,8 @@ export default function Hero() {
           className="mt-7 max-w-xl mx-auto text-[var(--color-ink-soft)] text-base lg:text-lg leading-relaxed"
         >
           From verified factories straight to your
-          door. Seven years of supply chain expertise, one consultant who
-          handles every detail.
+          door. Seven years of supply chain expertise. That's the import with
+          Goody difference.
         </motion.p>
 
         {/* Buttons — always inline, even on mobile */}

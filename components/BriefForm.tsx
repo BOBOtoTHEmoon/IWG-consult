@@ -34,6 +34,7 @@ const packages = [
   { id: "home", name: "Home & Décor", icon: Sofa, fee: "£300" },
   { id: "baby", name: "Expecting Mum", icon: Baby, fee: "£180" },
   { id: "souvenirs", name: "Souvenirs & Gifting", icon: Gift, fee: "£150" },
+  { id: "wardrobe", name: "Wardrobe & Accessories", icon: Gift, fee: "£150" },
   { id: "unsure", name: "Not sure yet", icon: FileText, fee: "We'll advise" },
 ];
 
@@ -425,12 +426,6 @@ export default function BriefForm() {
                 />
 
                 <div className="grid sm:grid-cols-2 gap-5">
-                  <Field
-                    label="Quantity / volume"
-                    value={form.quantity}
-                    onChange={(v) => update("quantity", v)}
-                    placeholder="500 units"
-                  />
                   <SelectField
                     label="Estimated budget"
                     value={form.budget}

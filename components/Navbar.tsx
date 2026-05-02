@@ -41,7 +41,7 @@ export default function Navbar() {
           <img
             src={isLight ? "/logo.png" : "/logo.png"}
             alt="IWG Consult"
-            className="h-9 lg:h-10 w-auto transition-opacity duration-500"
+            className="h-12 lg:h-14 w-auto transition-opacity duration-500"
           />
         </Link>
 
@@ -54,7 +54,7 @@ export default function Navbar() {
               className={`text-[13px] tracking-wide underline-grow transition-colors duration-500 ${
                 isLight
                   ? "text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
-                  : "text-[var(--color-cream)]/90 hover:text-[var(--color-cream)]"
+                  : "text-[var(--color-ink)]/90 hover:text-[var(--color-orche)]"
               }`}
             >
               {l.label}

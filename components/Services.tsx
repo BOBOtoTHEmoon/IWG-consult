@@ -32,7 +32,7 @@ const services = [
     ],
     fee: "£180",
     commission: "5%",
-    href: "/start-brief",
+    href: "/services#expecting",
   },
   {
     id: "business",
@@ -52,7 +52,7 @@ const services = [
     ],
     fee: "£250",
     commission: "5%",
-    href: "/start-brief",
+    href: "/servicesbusiness#",
     featured: true,
   },
   {
@@ -73,7 +73,7 @@ const services = [
     ],
     fee: "£300",
     commission: "5%",
-    href: "/start-brief",
+    href: "/services#home",
   },
   {
     id: "souvenirs",
@@ -93,7 +93,7 @@ const services = [
     ],
     fee: "£150",
     commission: "5%",
-    href: "/start-brief",
+    href: "/services#souvenirs",
   },
  {
     id: "wardrobe",
@@ -113,7 +113,7 @@ const services = [
     ],
     fee: "£200",
     commission: "5%",
-    href: "/start-brief",
+    href: "/services#wardrobe",
   },
 ];
 
@@ -307,7 +307,7 @@ export default function Services() {
                       href={active.href}
                       className="group inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--color-ink)] text-[var(--color-cream)] text-sm tracking-wide hover:bg-[var(--color-ochre)] transition-colors duration-300"
                     >
-                      Get Started Now
+                      Learn more
                       <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </Link>
                   </div>
