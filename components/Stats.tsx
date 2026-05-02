@@ -51,8 +51,11 @@ function Stat({
 }) {
   const { value, ref } = useCounter(target);
   return (
-    <div ref={ref} className="border-t border-[var(--color-ink)]/15 pt-5 lg:pt-8">
-      <div className="flex items-baseline gap-1">
+    <div
+  ref={ref}
+  className="border-t border-[var(--color-ink)]/15 pt-5 lg:pt-8 text-center lg:text-left"
+>
+      <div className="flex items-baseline justify-center lg:justify-start gap-1">
         <span className="number-display text-4xl sm:text-5xl lg:text-8xl tracking-[-0.04em] text-[var(--color-ochre)]">
           {prefix}
           {value.toLocaleString()}
