@@ -204,12 +204,11 @@ export default function ServicesPage() {
               </span>
               .
             </h1>
-            <p className="mt-6 lg:mt-8 max-w-xl text-[var(--color-ink-soft)] text-base lg:text-lg leading-relaxed">
-              Whatever you're sourcing — baby gear, business inventory, home
-              furnishings, souvenirs, or your personal wardrobe — you get the
-              same disciplined process and a single consultant from quote to
-              delivery.
-            </p>
+          <p className="mt-6 lg:mt-8 max-w-xl text-[var(--color-ink-soft)] text-base lg:text-lg leading-relaxed">
+  Whether you're sourcing baby gear, business inventory, home furnishings,
+  souvenirs, or pieces for your personal wardrobe, you receive the same
+  disciplined process and dedicated consultant from quote to delivery.
+</p>
           </div>
         </section>
 
@@ -270,7 +269,7 @@ export default function ServicesPage() {
                   <div className="mt-6 lg:mt-8 inline-flex items-baseline gap-5 lg:gap-6 p-4 lg:p-5 rounded-xl bg-[var(--color-cream-dark)] border border-[var(--color-line)]">
                     <div>
                       <p className="text-[9px] lg:text-[10px] tracking-[0.16em] uppercase text-[var(--color-stone)] mb-1">
-                        Sourcing fee
+                        Processing fee
                       </p>
                       <p className="number-display text-2xl lg:text-3xl text-[var(--color-ochre)]">
                         {s.fee}

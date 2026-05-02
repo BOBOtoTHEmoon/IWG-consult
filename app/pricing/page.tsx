@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Check, ArrowUpRight } from "lucide-react";
 
 export const metadata = {
-  title: "Pricing — IWG Consult",
+  title: "Pricing — Import with Goody",
 };
 
 const tiers = [
@@ -35,6 +35,18 @@ const tiers = [
     ],
   },
   {
+    name: "Wardrobe Package",
+    fee: "£150",
+    tag: "Personal style",
+    blurb: "Unique pieces sourced direct — clothes, shoes, bags, accessories.",
+    features: [
+      "Direct-from-supplier sourcing",
+      "Pieces in your exact size & taste",
+      "Quality verified before shipping",
+      "Discreet packaging & delivery",
+    ],
+  },
+  {
     name: "Sourcing for Business",
     fee: "£250",
     tag: "Importers & brands",
@@ -45,7 +57,6 @@ const tiers = [
       "Production follow-up",
       "Air or sea freight",
     ],
-    highlight: true,
   },
   {
     name: "Home & Décor",
@@ -87,44 +98,22 @@ export default function Pricing() {
 
         <section className="pb-20 lg:pb-28">
           <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
               {tiers.map((t) => (
                 <div
                   key={t.name}
-                  className={`rounded-2xl p-7 flex flex-col ${
-                    t.highlight
-                      ? "bg-[var(--color-ink)] text-[var(--color-cream)] border border-[var(--color-ink)]"
-                      : "bg-[var(--color-paper)] border border-[var(--color-line)]"
-                  }`}
+                  className="rounded-2xl p-7 flex flex-col bg-[var(--color-paper)] border border-[var(--color-line)]"
                 >
-                  <p
-                    className={`text-[10px] tracking-[0.18em] uppercase mb-3 ${
-                      t.highlight
-                        ? "text-[var(--color-ochre)]"
-                        : "text-[var(--color-stone)]"
-                    }`}
-                  >
+                  <p className="text-[10px] tracking-[0.18em] uppercase mb-3 text-[var(--color-stone)]">
                     {t.tag}
                   </p>
                   <h3 className="text-2xl tracking-[-0.02em] mb-2">{t.name}</h3>
-                  <p
-                    className={`text-sm leading-relaxed mb-6 ${
-                      t.highlight
-                        ? "text-[var(--color-cream)]/70"
-                        : "text-[var(--color-ink-soft)]"
-                    }`}
-                  >
+                  <p className="text-sm leading-relaxed mb-6 text-[var(--color-ink-soft)]">
                     {t.blurb}
                   </p>
                   <div className="flex items-baseline gap-1 mb-6">
                     <span className="number-display text-5xl">{t.fee}</span>
-                    <span
-                      className={`text-xs ${
-                        t.highlight
-                          ? "text-[var(--color-cream)]/60"
-                          : "text-[var(--color-stone)]"
-                      }`}
-                    >
+                    <span className="text-xs text-[var(--color-stone)]">
                       + 5%
                     </span>
                   </div>
@@ -132,11 +121,7 @@ export default function Pricing() {
                     {t.features.map((f) => (
                       <li
                         key={f}
-                        className={`flex items-start gap-2.5 text-sm ${
-                          t.highlight
-                            ? "text-[var(--color-cream)]/80"
-                            : "text-[var(--color-ink-soft)]"
-                        }`}
+                        className="flex items-start gap-2.5 text-sm text-[var(--color-ink-soft)]"
                       >
                         <Check className="w-4 h-4 mt-0.5 text-[var(--color-ochre)] shrink-0" />
                         {f}
@@ -145,11 +130,7 @@ export default function Pricing() {
                   </ul>
                   <Link
                     href="/start-brief"
-                    className={`mt-auto inline-flex items-center justify-center gap-1.5 px-5 py-3 rounded-full text-sm transition-colors duration-300 ${
-                      t.highlight
-                        ? "bg-[var(--color-ochre)] text-[var(--color-cream)] hover:bg-[var(--color-ochre-deep)]"
-                        : "bg-[var(--color-ink)] text-[var(--color-cream)] hover:bg-[var(--color-ochre)]"
-                    }`}
+                    className="mt-auto inline-flex items-center justify-center gap-1.5 px-5 py-3 rounded-full text-sm transition-colors duration-300 bg-[var(--color-ink)] text-[var(--color-cream)] hover:bg-[var(--color-ochre)]"
                   >
                     Get started
                     <ArrowUpRight className="w-3.5 h-3.5" />

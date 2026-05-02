@@ -8,40 +8,9 @@ export default function CTA() {
   return (
     <section className="relative">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
-        <div className="grid lg:grid-cols-12 rounded-2xl overflow-hidden border border-[var(--color-line)] shadow-[0_24px_60px_-30px_rgba(26,24,20,0.25)]">
-          {/* Left: image (desktop only) */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden lg:block lg:col-span-5 relative lg:min-h-[320px]"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1200&h=1400&fit=crop&q=80"
-              alt="Shipping containers at port"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(184,84,42,0.3) 0%, rgba(26,24,20,0.45) 100%)",
-              }}
-            />
-
-            {/* Top ribbon */}
-            <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-cream)]/90 backdrop-blur-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[9px] tracking-[0.18em] uppercase text-[var(--color-ink)] font-semibold">
-                Currently sourcing
-              </span>
-            </div>
-          </motion.div>
-
+      <div className="rounded-2xl overflow-hidden border border-[var(--color-line)] shadow-[0_24px_60px_-30px_rgba(26,24,20,0.25)]">
           {/* Right: dark CTA panel */}
-          <div className="lg:col-span-7 bg-[var(--color-ink)] text-[var(--color-cream)] relative px-6 py-10 lg:px-12 lg:py-14 flex flex-col justify-center overflow-hidden">
+          <div className="bg-[var(--color-ink)] text-[var(--color-cream)] relative px-6 py-10 lg:px-12 lg:py-14 flex flex-col justify-center overflow-hidden">
             {/* Subtle dot pattern */}
             <div
               aria-hidden
