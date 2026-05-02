@@ -161,7 +161,7 @@ const services = [
     image: "/services/wardrobe.jpg",
     tagline:
       "For individuals who want to upgrade their wardrobe — clothes, shoes, bags and accessories for personal use.",
-    fee: "£200",
+    fee: "£150",
     commission: "5%",
     steps: [
       {

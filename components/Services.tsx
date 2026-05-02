@@ -111,7 +111,7 @@ const services = [
       "Quality verified before shipping",
       "Discreet packaging & UK delivery",
     ],
-    fee: "£200",
+    fee: "£150",
     commission: "5%",
     href: "/services#wardrobe",
   },
@@ -298,7 +298,7 @@ export default function Services() {
                     href={active.href}
                     className="group w-full lg:hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[var(--color-ink)] text-[var(--color-cream)] text-sm tracking-wide hover:bg-[var(--color-ochre)] transition-colors duration-300"
                   >
-                    Get Started Now
+                    Learn More
                     <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </Link>
                   {/* Desktop button */}
