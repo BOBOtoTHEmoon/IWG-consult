@@ -19,9 +19,9 @@ const steps = [
     title: "Select & submit your brief",
     body:
       "Choose your package, submit product references, target volumes and delivery window through our intake form.",
-    duration: "~3 min",
+    duration: "2 min",
     durationLabel: "One form",
-    accent: "Quote within 24 hours",
+  
   },
   {
     n: "02",
@@ -30,9 +30,8 @@ const steps = [
     title: "Sourcing & verification",
     body:
       "We match your brief to factories from our verified network, negotiate pricing, request samples and audit production capability.",
-    duration: "5–10 days",
-    durationLabel: "Audit + quotes",
-    accent: "3 supplier options",
+    duration: "3–5 days",
+    
   },
   {
     n: "03",
@@ -41,9 +40,8 @@ const steps = [
     title: "Approval & production",
     body:
       "You approve samples, we supervise production, run mid-line inspections and send weekly photo updates to your inbox.",
-    duration: "2–6 weeks",
-    durationLabel: "Manufacturing",
-    accent: "Mid-line inspection",
+    duration: "3–10 days",
+   
   },
   {
     n: "04",
@@ -52,7 +50,7 @@ const steps = [
     title: "Logistics & delivery",
     body:
       "Freight booking, customs paperwork and last-mile coordination. Tracking link from despatch until the boxes hit your door.",
-    duration: "5–40 days",
+    duration: "7–60 days",
     durationLabel: "Air or sea freight",
     accent: "Live tracking",
   },

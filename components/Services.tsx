@@ -187,10 +187,11 @@ export default function Services() {
           </div>
         </div>
 
-
-
-        {/* Showcase panel */}
-        <div className="relative rounded-2xl overflow-hidden border border-[var(--color-line)] bg-[var(--color-cream)] shadow-[0_24px_60px_-30px_rgba(26,24,20,0.2)]">
+      {/* Showcase panel — entire card clickable to services page */}
+        <Link
+          href={active.href}
+          className="relative block rounded-2xl overflow-hidden border border-[var(--color-line)] bg-[var(--color-cream)] shadow-[0_24px_60px_-30px_rgba(26,24,20,0.2)] hover:shadow-[0_30px_70px_-25px_rgba(26,24,20,0.3)] transition-shadow duration-500"
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={active.id}
@@ -294,20 +295,22 @@ export default function Services() {
                     </div>
                   </div>
                   {/* Mobile button */}
-                  <Link
-                    href={active.href}
+              <Link
+                    href="/start-brief"
+                    onClick={(e) => e.stopPropagation()}
                     className="group w-full lg:hidden inline-flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-[var(--color-ink)] text-[var(--color-cream)] text-sm tracking-wide hover:bg-[var(--color-ochre)] transition-colors duration-300"
                   >
-                    Learn More
+                    Get started
                     <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </Link>
-                  {/* Desktop button */}
+                  {/* Desktop button — keeps right-aligned button */}
                   <div className="hidden lg:flex justify-end mt-4">
                     <Link
-                      href={active.href}
+                      href="/start-brief"
+                      onClick={(e) => e.stopPropagation()}
                       className="group inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--color-ink)] text-[var(--color-cream)] text-sm tracking-wide hover:bg-[var(--color-ochre)] transition-colors duration-300"
                     >
-                      Learn more
+                      Get started
                       <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </Link>
                   </div>
@@ -315,11 +318,11 @@ export default function Services() {
               </div>
             </motion.div>
           </AnimatePresence>
-        </div>
+        </Link>
 
         {/* Helper note */}
         <p className="text-center text-xs text-[var(--color-stone)] mt-5 lg:mt-6">
-          Click a package above to see the details
+          Click a package to learn more, or "Get started" to submit a brief
         </p>
       </div>
     </section>

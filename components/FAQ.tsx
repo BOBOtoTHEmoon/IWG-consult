@@ -57,7 +57,7 @@ function FAQItem({
       }}
       className={`rounded-xl overflow-hidden transition-all duration-300 ${
         isOpen
-          ? "bg-[var(--color-ochre)] text-[var(--color-cream)]"
+          ? "bg-[#5C1D05] text-[var(--color-cream)]"
           : "bg-[#f5d6a8] text-[var(--color-ink)] hover:brightness-95"
       }`}
     >

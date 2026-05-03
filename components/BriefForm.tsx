@@ -13,6 +13,7 @@ import {
   Building2,
   Sofa,
   Baby,
+  Shirt,
   Gift,
   Loader2,
   CheckCircle2,
@@ -22,19 +23,19 @@ const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const STRIPE_PAYMENT_LINKS: Record<string, string> = {
-  business: "https://buy.stripe.com/REPLACE_WITH_BUSINESS_LINK",
-  home: "https://buy.stripe.com/REPLACE_WITH_HOME_LINK",
-  baby: "https://buy.stripe.com/REPLACE_WITH_BABY_LINK",
-  souvenirs: "https://buy.stripe.com/REPLACE_WITH_SOUVENIRS_LINK",
-  wardrobe: "https://buy.stripe.com/REPLACE_WITH_WARDROBE_LINK",
-  unsure: "", // No payment link — just skip redirect
+  business: "https://buy.stripe.com/28E7sLgTr2kl53V9XidfG0a",
+  home: "https://buy.stripe.com/9B6eVdeLjf770NF1qMdfG09",
+  baby: "https://buy.stripe.com/00w3cv5aJe33gMD7PadfG08",
+  souvenirs: "https://buy.stripe.com/5kQcN56eN9MNfIzd9udfG07",
+  wardrobe: "https://buy.stripe.com/00w9AT5aJ4st0NF6L6dfG06",
+  unsure: "", // No payment redirect — they're just exploring
 };
 const packages = [
   { id: "business", name: "Sourcing for Business", icon: Building2, fee: "£250" },
   { id: "home", name: "Home & Décor", icon: Sofa, fee: "£300" },
   { id: "baby", name: "Expecting Mum", icon: Baby, fee: "£180" },
   { id: "souvenirs", name: "Souvenirs & Gifting", icon: Gift, fee: "£150" },
-  { id: "wardrobe", name: "Wardrobe & Accessories", icon: Gift, fee: "£150" },
+  { id: "wardrobe", name: "Wardrobe & Accessories", icon: Shirt, fee: "£150" },
   { id: "unsure", name: "Not sure yet", icon: FileText, fee: "We'll advise" },
 ];
 
@@ -149,29 +150,73 @@ export default function BriefForm() {
     });
   };
 
- const handleSubmit = async () => {
+const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError("");
 
-    try {
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      files.forEach((f) => fd.append("files", f.file));
+    const PACKAGE_NAMES: Record<string, string> = {
+      business: "Sourcing for Business",
+      home: "Home, Décor & Appliances",
+      baby: "Expecting Mum",
+      souvenirs: "Souvenirs & Co",
+      wardrobe: "Wardrobe Package",
+      unsure: "Not sure yet",
+    };
 
-      const res = await fetch("/api/submit-brief", {
-        method: "POST",
-        body: fd,
+    try {
+      const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+      if (!accessKey) {
+        throw new Error("Form configuration missing — please contact us directly.");
+      }
+
+      const packageName =
+        PACKAGE_NAMES[form.packageId] || form.packageId || "Not selected";
+
+      const payload = new FormData();
+      payload.append("access_key", accessKey);
+      payload.append("subject", `New brief: ${packageName} — ${form.fullName}`);
+      payload.append("from_name", "Import with Goody — Brief Form");
+      payload.append("replyto", form.email);
+      payload.append("botcheck", "");
+
+      // Customer details
+      payload.append("Customer Name", form.fullName);
+      payload.append("Customer Email", form.email);
+      payload.append("Phone", form.phone || "—");
+      payload.append("Company", form.company || "—");
+
+      // Package
+      payload.append("Package", packageName);
+
+      // Sourcing details
+      payload.append("Product Description", form.productDescription);
+      payload.append("Quantity", form.quantity || "—");
+      payload.append("Budget", form.budget || "—");
+      payload.append("Timeline", form.timeline || "—");
+      payload.append("Delivery Country", form.deliveryCountry || "—");
+      payload.append("Additional Notes", form.notes || "—");
+
+      // Files
+      files.forEach((f, i) => {
+        payload.append(`attachment_${i + 1}`, f.file, f.file.name);
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Submission failed");
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: payload,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        console.error("Web3Forms response:", data);
+        throw new Error(data.message || "Failed to send brief");
       }
 
       setSubmitting(false);
       setSubmitted(true);
 
-      // Redirect to Stripe Payment Link after 2.5s (gives user time to see success state)
+      // Redirect to Stripe Payment Link after 2.5s
       const paymentUrl = STRIPE_PAYMENT_LINKS[form.packageId];
       if (paymentUrl) {
         setTimeout(() => {
