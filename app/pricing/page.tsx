@@ -104,7 +104,7 @@ export default function Pricing() {
                   key={t.name}
                   className="rounded-2xl p-7 flex flex-col bg-[var(--color-paper)] border border-[var(--color-line)]"
                 >
-                  <p className="text-[10px] tracking-[0.18em] uppercase mb-3 text-[var(--color-stone)]">
+                  <p className="text-[10px] tracking-[0.18em] uppercase mb-3 text-[var(--color-ochre)] font-semibold">
                     {t.tag}
                   </p>
                   <h3 className="text-2xl tracking-[-0.02em] mb-2">{t.name}</h3>
@@ -112,7 +112,9 @@ export default function Pricing() {
                     {t.blurb}
                   </p>
                   <div className="flex items-baseline gap-1 mb-6">
-                    <span className="number-display text-5xl">{t.fee}</span>
+                    <span className="number-display text-5xl text-[var(--color-ochre)]">
+                      {t.fee}
+                    </span>
                     <span className="text-xs text-[var(--color-stone)]">
                       + 5%
                     </span>
@@ -141,9 +143,10 @@ export default function Pricing() {
 
             <div className="mt-10 bg-[var(--color-cream-dark)] rounded-2xl p-7 lg:p-10 grid lg:grid-cols-12 gap-6 items-center">
               <div className="lg:col-span-8">
-                <h3 className="text-2xl lg:text-3xl tracking-[-0.02em] mb-2">
-                  Need something custom?
-                </h3>
+               <h3 className="text-2xl lg:text-3xl tracking-[-0.02em] mb-2">
+                  Need something{" "}
+                  <span className="text-[var(--color-ochre)]">custom?</span>
+                </h3> 
                 <p className="text-[var(--color-ink-soft)] text-sm leading-relaxed">
                   Large or recurring orders, multi-category briefs, or ongoing
                   retainers — we'll quote a tailored arrangement.

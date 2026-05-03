@@ -321,12 +321,12 @@ const handleSubmit = async () => {
         </div>
 
         {/* Progress */}
-        <div className="mb-10">
+        <div className="mb-10 max-w-md mx-auto">
           <div className="flex items-center justify-between mb-3">
             {stepLabels.map((label, i) => (
               <div
                 key={label}
-                className="flex items-center gap-2.5 flex-1"
+                className="flex items-center gap-2.5 flex-1 last:flex-none"
               >
                 <div
                   className={`w-7 h-7 rounded-full grid place-items-center text-[11px] number-display transition-all duration-500 ${

@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-playfair",
+  variable: "--font-body",
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const interDisplay = Inter({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-dm-sans",
+  variable: "--font-display",
+  weight: ["500", "600", "700", "800", "900"],
   display: "swap",
 });
 
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-jetbrains",
+  variable: "--font-mono",
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -48,11 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
+   <html
       lang="en"
-      className={`${playfair.variable} ${dmSans.variable} ${jetbrains.variable}`}
+      className={`${inter.variable} ${interDisplay.variable} ${jetbrains.variable}`}
     >
       <body className="grain">{children}</body>
     </html>
-  );
+  )
 }
