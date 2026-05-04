@@ -154,63 +154,25 @@ const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError("");
 
-    const PACKAGE_NAMES: Record<string, string> = {
-      business: "Sourcing for Business",
-      home: "Home, Décor & Appliances",
-      baby: "Expecting Mum",
-      souvenirs: "Souvenirs & Co",
-      wardrobe: "Wardrobe Package",
-      unsure: "Not sure yet",
-    };
-
     try {
-      const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-      if (!accessKey) {
-        throw new Error("Form configuration missing — please contact us directly.");
-      }
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      files.forEach((f) => fd.append("files", f.file));
 
-      const packageName =
-        PACKAGE_NAMES[form.packageId] || form.packageId || "Not selected";
-
-      const payload = new FormData();
-      payload.append("access_key", accessKey);
-      payload.append("subject", `New brief: ${packageName} — ${form.fullName}`);
-      payload.append("from_name", "Import with Goody — Brief Form");
-      payload.append("replyto", form.email);
-      payload.append("botcheck", "");
-
-      // Customer details
-      payload.append("Customer Name", form.fullName);
-      payload.append("Customer Email", form.email);
-      payload.append("Phone", form.phone || "—");
-      payload.append("Company", form.company || "—");
-
-      // Package
-      payload.append("Package", packageName);
-
-      // Sourcing details
-      payload.append("Product Description", form.productDescription);
-      payload.append("Quantity", form.quantity || "—");
-      payload.append("Budget", form.budget || "—");
-      payload.append("Timeline", form.timeline || "—");
-      payload.append("Delivery Country", form.deliveryCountry || "—");
-      payload.append("Additional Notes", form.notes || "—");
-
-      // Files
-      files.forEach((f, i) => {
-        payload.append(`attachment_${i + 1}`, f.file, f.file.name);
-      });
-
-      const res = await fetch("https://api.web3forms.com/submit", {
+      const res = await fetch("/api/submit-brief", {
         method: "POST",
-        body: payload,
+        body: fd,
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data.success) {
-        console.error("Web3Forms response:", data);
-        throw new Error(data.message || "Failed to send brief");
+      if (!res.ok) {
+        console.error("Submit error response:", data);
+        throw new Error(
+          data.error ||
+            data.message ||
+            `Submission failed (status ${res.status})`
+        );
       }
 
       setSubmitting(false);
