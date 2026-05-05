@@ -232,7 +232,7 @@ const handleSubmit = async () => {
             className="text-[var(--color-ink-soft)] text-base leading-relaxed mb-10 max-w-md mx-auto"
           >
             We've got your details and we'll come back with first supplier matches
-            inside ten working days.
+            inside 3-5 working days.
             {STRIPE_PAYMENT_LINKS[form.packageId] ? (
               <>
                 {" "}
