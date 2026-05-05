@@ -38,7 +38,7 @@ export default function CTA() {
               </h2>
               <p className="text-[var(--color-cream)]/65 text-[13px] sm:text-sm lg:text-base leading-relaxed mb-6 lg:mb-7 max-w-md">
                 Submit a brief in under three minutes. First supplier matches
-                inside ten working days.
+                inside 3-5 working days.
               </p>
 
               {/* Buttons — horizontal on mobile too */}
