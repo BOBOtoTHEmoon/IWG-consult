@@ -1,73 +1,70 @@
-# IWG Consult — Replica Site
+# Import with Goody, phase 2 (front end)
 
-A production-grade rebuild of [iwgconsult.com](https://www.iwgconsult.com) — same business (UK procurement & sourcing consultancy), tighter execution, deployable to Vercel out of the box.
+Next.js 15 (App Router) + Tailwind CSS v4 + TypeScript.
+This is the approved redesign turned into real, responsive pages. Everything runs on
+sample data in `lib/data.ts`. Supabase, PayPal, Royal Mail rates and the AI assistant
+are wired in later phases (look for `TODO` comments).
 
-## Stack
+## Run it
 
-- **Next.js 15** (App Router) + **React 19**
-- **Tailwind CSS v4** (CSS-first config via `@theme`)
-- **Motion** (Framer Motion's successor) for entrance + scroll animations
-- **Lucide React** for icons
-- **Fraunces** + **Geist** + **JetBrains Mono** via `next/font/google`
-
-## Run locally
+Requires Node.js 20 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000
 
-## Deploy to Vercel
+## Pages
 
-1. Push this folder to a GitHub repo
-2. Import to Vercel → it auto-detects Next.js
-3. Done. No env vars required.
+| Route | What it is |
+| --- | --- |
+| `/` | Home |
+| `/shop` | Shop all, with `?category=homeware` etc. |
+| `/product/[slug]` | Product page (gallery, colour, quantity) |
+| `/sourcing` | Sourcing services and request form (£50 commitment fee, 10% service charge) |
+| `/checkout` | Checkout (Royal Mail options, PayPal) |
+| `/admin` | Admin overview |
+| `/admin/orders` | Orders, filter by status |
+| `/admin/products/new` | Add product (built for phone use) |
+| `/admin/sourcing`, `/admin/content`, `/admin/assistant`, `/admin/delivery` | Placeholders for screens still to design |
 
-## What's different from the original
-
-The Framer template at iwgconsult.com had several executional issues we fixed:
-
-- **Real testimonials** — original had "wellness coach" / "blood pressure" quotes left over from the template. Replaced with realistic sourcing client quotes.
-- **Animated counters** — original showed `0` as a stat (counter never fired). Ours uses IntersectionObserver to count up on scroll.
-- **No duplicated DOM** — Framer exports duplicated each section 3x for breakpoints; ours uses Tailwind responsive classes.
-- **Working FAQ accordion** — original showed every FAQ question 3x with no answers visible. Ours has proper expand/collapse with motion.
-- **Hero imagery** — original used a generic fitness photo (mismatch with the business). Ours uses logistics + factory imagery.
-- **Process steps** — original repeated "Select & Submit" four times. Ours has 4 distinct steps with descriptions and imagery.
-- **Editorial typography** — Fraunces (display) + Geist (body) instead of generic Inter.
+The Ask Goody assistant floats on every shop page (bottom right).
 
 ## Structure
 
 ```
 app/
-  layout.tsx          # fonts, metadata
-  page.tsx            # home (composes all sections)
-  globals.css         # Tailwind v4 + design tokens
-  about/page.tsx
-  services/page.tsx
-  pricing/page.tsx
+  (shop)/          storefront pages share the header, footer and assistant
+  checkout/        focused checkout layout
+  admin/           admin layout with sidebar (desktop) and tab bar (phone)
 components/
-  Navbar.tsx          # sticky nav with mobile menu
-  Hero.tsx            # editorial split layout, animated entrance
-  RoutesMarquee.tsx   # global trade routes ticker
-  Stats.tsx           # animated counters on scroll
-  Services.tsx        # 4 procurement packages
-  Process.tsx         # 4-step journey
-  Consultant.tsx      # founder profile (dark section)
-  Testimonials.tsx    # client quotes
-  FAQ.tsx             # working accordion
-  CTA.tsx             # ochre block before footer
-  Footer.tsx          # big wordmark + nav
+  shop/            header, footer, product card, assistant, sourcing form, product gallery and buy box
+  admin/           admin navigation
+  Icons.tsx        inline SVG icon set
+  PhotoPlaceholder.tsx   tinted stand-in until real photos are uploaded
+lib/data.ts        sample products, categories and orders
+app/globals.css    design tokens (colours and fonts)
 ```
 
 ## Design tokens
 
-All colors and fonts are CSS variables defined in `globals.css` under `@theme`.
-Change the brand color by editing `--color-ochre`. Change the typography via the Google Fonts imports in `layout.tsx`.
+Colours live in `app/globals.css` under `@theme` and are used as Tailwind classes,
+for example `bg-cream`, `text-clay`, `bg-brown`, `text-jade`, `bg-paypal`.
+Fonts: Fraunces (headings, `font-display`) and Figtree (body, `font-sans`), loaded with `next/font`.
 
-## Forms
+## Next phases
 
-The contact / "Get Started" buttons all link to the existing JotForm
-(`/start-brief`). Swap this URL globally with
-find-and-replace if/when a custom form is built.
+1. Supabase: products, categories, orders, sourcing requests, storage for photos, auth for `/admin`.
+2. Basket state and PayPal checkout (orders API: create and capture on the server).
+3. Sourcing request flow: save request, take £50 via PayPal, email Goody and the customer (Resend).
+4. Delivery rates by zone and weight band, editable in the admin.
+5. AI assistant API route with product search.
+6. Remaining admin screens: sourcing requests, site content, assistant answers, delivery rates.
+
+## Open questions for Goodness
+
+- Is shipping on sourcing orders quoted separately from the 10% service charge?
+- Should the £50 be refunded, or deducted from what the customer owes when they go ahead?
+- Delivery rates and times for UK Standard, UK Tracked and international zones.
