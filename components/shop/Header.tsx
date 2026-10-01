@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BagIcon, CloseIcon, MenuIcon, SearchIcon } from "../Icons";
+import { useBasket } from "./BasketProvider";
 import Logo from "./Logo";
+import SearchDialog from "./SearchDialog";
 
 const iconBtn =
   "flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-sand";
@@ -12,7 +14,10 @@ const iconBtn =
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const basketCount = 2; // replace with real basket state
+    const [searchOpen, setSearchOpen] = useState(false);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const basket = useBasket();
+  const count = basket.ready ? basket.count : 0;
 
   const nav = [
     { href: "/shop", label: "Shop", active: pathname.startsWith("/shop") || pathname.startsWith("/product") },
@@ -64,18 +69,26 @@ export default function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-1">
-            <button className={`${iconBtn} hidden lg:flex`} aria-label="Search">
+                       <button onClick={() => setSearchOpen(true)} className={iconBtn} aria-label="Search">
               <SearchIcon />
             </button>
-            <Link href="/checkout" className={`${iconBtn} relative`} aria-label={`Basket, ${basketCount} items`}>
+            <button
+              onClick={basket.open}
+              className={`${iconBtn} relative`}
+              aria-label={count > 0 ? `Basket, ${count} ${count === 1 ? "item" : "items"}` : "Basket, empty"}
+            >
               <BagIcon />
-              <span className="absolute right-0.5 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-clay text-[11px] font-bold text-white">
-                {basketCount}
-              </span>
-            </Link>
+              {count > 0 && (
+                <span className="absolute right-0.5 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-clay px-1 text-[11px] font-bold text-white">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </header>
+
+            <SearchDialog open={searchOpen} onClose={closeSearch} />
 
       {/* Mobile menu lives outside the header so the blur does not trap it. */}
       <div

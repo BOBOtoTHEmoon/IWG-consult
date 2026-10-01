@@ -7,6 +7,7 @@ import { GlobeIcon, ShieldIcon, TruckIcon } from "@/components/Icons";
 import { categoryName, gbp } from "@/lib/data";
 import { LOW_STOCK } from "@/lib/product-types";
 import { getLiveProduct, getLiveProducts } from "@/lib/products";
+import { site } from "@/lib/site";
 
 // Refresh the cached page at least every minute. Admin saves also refresh it straight away.
 export const revalidate = 60;
@@ -14,10 +15,18 @@ export const revalidate = 60;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const p = await getLiveProduct(slug);
+  if (!p) return { title: "Product | Import with Goody" };
+  const description = (p.description || `${p.name}, from Import with Goody.`).slice(0, 160);
   return {
-    title: p ? `${p.name} | Import with Goody` : "Product | Import with Goody",
-    description: p?.description.slice(0, 160),
-    openGraph: p?.images[0] ? { images: [p.images[0]] } : undefined,
+    title: `${p.name} | Import with Goody`,
+    description,
+    alternates: { canonical: `/product/${p.slug}` },
+    openGraph: {
+      title: p.name,
+      description,
+      url: `/product/${p.slug}`,
+      images: p.images[0] ? [{ url: p.images[0], alt: p.name }] : undefined,
+    },
   };
 }
 
@@ -52,8 +61,33 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ...others.filter((p) => p.category !== product.category),
   ].slice(0, 4);
 
+  // Product details in the format Google uses for shopping results (price, stock, photo).
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || undefined,
+    image: product.images.length ? product.images : undefined,
+    sku: product.slug,
+    category: categoryName(product.category),
+    brand: { "@type": "Brand", name: site.name },
+    offers: {
+      "@type": "Offer",
+      url: `${site.url}/product/${product.slug}`,
+      priceCurrency: "GBP",
+      price: product.price.toFixed(2),
+      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: { "@type": "Organization", name: site.name },
+    },
+  };
+
   return (
     <div className="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
       <section className="flex flex-col gap-7 pb-20 pt-6 lg:pb-24 lg:pt-8">
         <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 text-sm text-subtle">
           <Link href="/" className="text-subtle">Home</Link>
@@ -81,7 +115,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <p className="whitespace-pre-line text-[17px] leading-relaxed text-muted">{product.description}</p>
             )}
 
-            <ProductBuyBox price={product.price} colours={product.colours} stock={product.stock} />
+            <ProductBuyBox product={product} />
 
             <div className="flex flex-col rounded-[18px] border border-line bg-paper px-5 py-2">
               {assurances.map(({ icon: Icon, title, body }) => (

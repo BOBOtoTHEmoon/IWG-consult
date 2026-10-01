@@ -33,11 +33,15 @@ const groups: { title: string; items: QA[] }[] = [
   },
   {
     title: "Sourcing service",
-    items: [
+        items: [
       { q: "How does sourcing work?", a: <>You send a list of what you want and pay a £50 commitment fee. Within 2 to 4 working days, Goody comes back with suppliers and the full product cost. <Link href="/sourcing">See the full process</Link>.</> },
+      { q: "What does the £50 cover?", a: "Supplier research, factory verification, price negotiation, sample coordination where needed, and all communication with manufacturers. It doesn't include the cost of the products or shipping." },
       { q: "When do I get my £50 back?", a: "When you go ahead with the purchase. You pay the product cost plus a 10% service charge, and the £50 is refunded." },
       { q: "What if I don't go ahead?", a: "The £50 isn't refunded, because it covers the sourcing work already done." },
-      { q: "How is shipping from China charged?", a: "It's quoted separately with your sourcing quote, based on the best route and method for your items." },
+      { q: "How long does delivery from China take?", a: "Air freight usually takes around 7 working days or more, and sea freight up to 60 days. Goody recommends the best option for your items, timeline and budget." },
+      { q: "Do you handle shipping and customs?", a: "Goody arranges the shipping and tracks your items to your door. Any import duties or taxes for your country are quoted or explained before you go ahead." },
+      { q: "Can I see a sample before ordering?", a: "Yes, where it makes sense. Goody arranges samples for you to approve before the full order is made." },
+      { q: "Not sure exactly what you want?", a: <>Describe what it&apos;s for and your budget in your <Link href="/sourcing#request">sourcing request</Link>, and Goody can suggest options.</> },
     ],
   },
 ];

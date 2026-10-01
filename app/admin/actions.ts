@@ -11,12 +11,11 @@ export async function signOut() {
   redirect("/login");
 }
 
-// Refresh the cached shop pages straight after a product changes,
+// Refresh the cached shop pages straight after a product or the homepage changes,
 // so shoppers see the update immediately instead of within a minute.
-export async function refreshShop(slug?: string) {
+// The slug argument is accepted for older callers but not needed.
+export async function refreshShop(_slug?: string) {
   if (!(await getStaff())) return;
-  revalidatePath("/");
-  revalidatePath("/shop");
-  if (slug) revalidatePath(`/product/${slug}`);
-  revalidatePath("/admin", "layout");
+  // Refreshes every page, including the announcement bar in the shop layout.
+  revalidatePath("/", "layout");
 }

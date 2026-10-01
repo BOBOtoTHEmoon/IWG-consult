@@ -1,7 +1,6 @@
 import Link from "next/link";
 import SourcingForm from "@/components/shop/SourcingForm";
-import { ArrowRightIcon, CheckboxIcon, InfoIcon, PinIcon, RouteIcon, SearchIcon } from "@/components/Icons";
-
+import { ArrowRightIcon, CalendarIcon, CheckboxIcon, InfoIcon, RouteIcon, SearchIcon } from "@/components/Icons";
 export const metadata = {
   title: "Sourcing services | Import with Goody",
   description:
@@ -16,21 +15,24 @@ const glance = [
 
 const steps = [
   ["Send your list", "Describe every item you want in as much detail as you can, and pay the £50 commitment fee."],
-  ["We source it", "Within 2 to 4 working days, Goody comes back with suppliers and the full product cost."],
-  ["You go ahead", "Pay for the products plus the 10% service charge. Your £50 commitment fee is refunded."],
-  ["We check, ship and track", "Quantity and quality are verified, the best shipping route is chosen, and your items are tracked to you."],
+  ["We source it", "Within 2 to 4 working days, Goody comes back with verified suppliers and the full product cost."],
+  ["You go ahead", "Approve your options, and samples if needed. Then pay for the products plus the 10% service charge, and your £50 is refunded."],
+  ["Made, checked and shipped", "You get weekly updates while your order is made. It's checked for quantity and quality, then shipped by air or sea and tracked to you."],
 ];
 
 const covers = [
-  { icon: SearchIcon, title: "Finding suppliers", body: "We search for the products on your list and confirm prices with suppliers." },
-  { icon: CheckboxIcon, title: "Quantity and quality checks", body: "We verify that you get the right quantity and the quality you expect." },
-  { icon: RouteIcon, title: "Best shipping route", body: "We pick the best route and shipping method for your type of product." },
-  { icon: PinIcon, title: "Tracking to delivery", body: "We keep track of your items so you never miss your delivery." },
+  { icon: SearchIcon, title: "Finding suppliers", body: "Supplier research, factory checks and price negotiation, so you get the right product at the right price." },
+  { icon: CheckboxIcon, title: "Samples and quality checks", body: "Samples arranged where needed, and every order checked for quantity and quality before it ships." },
+  { icon: CalendarIcon, title: "Weekly updates", body: "While your order is being made, you hear from Goody every week, so you're never left guessing." },
+  { icon: RouteIcon, title: "Shipping and tracking", body: "The best route for your products, by air or sea, tracked all the way to your door." },
 ];
 
 const faqs = [
+  ["What does the £50 cover?", "Supplier research, factory verification, price negotiation, sample coordination where needed, and all communication with manufacturers. It doesn't include the cost of the products or shipping."],
   ["When do I get my £50 back?", "As soon as you go ahead with the purchase. You pay the product cost and the 10% service charge, and the £50 is returned to you."],
   ["What if I change my mind after you've sourced my items?", "The £50 is not refunded, because the sourcing work has already been done."],
+  ["How long does delivery from China take?", "It depends on the shipping method. Air freight usually takes around 7 working days or more, and sea freight up to 60 days. Goody recommends the best option for your items, timeline and budget."],
+  ["Can I see a sample before ordering?", "Yes, where it makes sense. Goody arranges samples for you to approve before the full order is made."],
   ["How is the service charge worked out?", "It is 10% of the total product cost from China. For example, if your products come to £450, the service charge is £45."],
 ];
 
@@ -136,6 +138,10 @@ export default function SourcingPage() {
             </div>
           ))}
         </div>
+                <p className="text-[15px] leading-relaxed text-muted">
+          <strong className="text-ink">Not included in the £50:</strong> the cost of the products and shipping. Both are quoted
+          for you before you decide to go ahead.
+        </p>
       </section>
 
       {/* Request form */}

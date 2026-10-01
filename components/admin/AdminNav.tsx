@@ -13,6 +13,7 @@ import {
   PenIcon,
   SparkleIcon,
   TruckIcon,
+  MailIcon,
 } from "../Icons";
 import Image from "next/image";
 
@@ -27,6 +28,7 @@ const sidebarLinks = (toPack: number) => [
   { href: "/admin/content", label: "Site content", icon: PenIcon },
   { href: "/admin/assistant", label: "AI assistant", icon: SparkleIcon },
   { href: "/admin/delivery", label: "Delivery rates", icon: TruckIcon },
+  { href: "/admin/subscribers", label: "Email sign-ups", icon: MailIcon },
 ];
 
 export function AdminSidebar({ staffName, toPack }: { staffName: string; toPack: number }) {
@@ -83,7 +85,7 @@ export function AdminSidebar({ staffName, toPack }: { staffName: string; toPack:
   );
 }
 
-const moreRoutes = ["/admin/more", "/admin/content", "/admin/assistant", "/admin/delivery"];
+const moreRoutes = ["/admin/more", "/admin/content", "/admin/subscribers", "/admin/assistant", "/admin/delivery"];
 
 const tabs = (toPack: number) => [
   { href: "/admin", label: "Home", icon: GridIcon },

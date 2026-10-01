@@ -1,24 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { gbp } from "@/lib/data";
-import { MinusIcon, PlusIcon } from "../Icons";
+import type { ShopProduct } from "@/lib/product-types";
+import { CheckIcon } from "../Icons";
+import { useBasket } from "./BasketProvider";
+import QuantityStepper from "./QuantityStepper";
 
-export default function ProductBuyBox({
-  price,
-  colours,
-  stock,
-}: {
-  price: number;
-  colours?: { name: string; hex: string }[];
-  stock: number;
-}) {
+export default function ProductBuyBox({ product }: { product: ShopProduct }) {
+  const router = useRouter();
+  const { add, items, open } = useBasket();
+  const { colours, stock, price } = product;
   const [qty, setQty] = useState(1);
-  const [colour, setColour] = useState(colours?.[0]?.name);
-  const soldOut = stock === 0;
+  const [colour, setColour] = useState(colours[0]?.name);
+  const [added, setAdded] = useState(false);
 
-  if (soldOut) {
+  if (stock === 0) {
     return (
       <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
         <span className="text-base font-semibold">Sold out for now</span>
@@ -33,9 +32,31 @@ export default function ProductBuyBox({
     );
   }
 
+  // Don't let them add more than is left, counting what's already in the basket.
+  const key = `${product.id}${colour ? `:${colour}` : ""}`;
+  const inBasket = items.find((i) => i.key === key)?.qty ?? 0;
+  const canAdd = Math.max(0, stock - inBasket);
+
+  function addToBasket() {
+    add(
+      {
+        productId: product.id,
+        slug: product.slug,
+        name: product.name,
+        colour,
+        price,
+        image: product.images[0],
+        tint: product.tint,
+        stock,
+      },
+      Math.min(qty, canAdd)
+    );
+    setQty(1);
+  }
+
   return (
     <div className="flex flex-col gap-5">
-      {colours && colours.length > 0 && (
+      {colours.length > 0 && (
         <div className="flex flex-col gap-3">
           <span className="text-[15px] font-semibold">
             Colour: <span className="font-normal text-muted">{colour}</span>
@@ -58,38 +79,51 @@ export default function ProductBuyBox({
         </div>
       )}
 
-      <div className="flex gap-3">
-        <div className="flex h-14 items-center rounded-full border-[1.5px] border-line-strong bg-paper">
-          <button
-            aria-label="Decrease quantity"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
-          >
-            <MinusIcon size={18} />
-          </button>
-          <span className="w-8 text-center text-[17px] font-semibold" aria-live="polite">{qty}</span>
-          <button
-            aria-label="Increase quantity"
-            onClick={() => setQty((q) => Math.min(stock, q + 1))}
-            className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
-          >
-            <PlusIcon size={18} />
+      {canAdd === 0 ? (
+        <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
+          <span className="text-[15px] font-semibold">You have all {stock} in your basket</span>
+          <button onClick={open} className="flex h-12 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-cream">
+            View basket
           </button>
         </div>
-        {/* TODO: add to basket state, then go to checkout */}
-        <Link
-          href="/checkout"
-          className="flex h-14 flex-1 items-center justify-center rounded-full bg-clay text-base font-semibold text-white hover:bg-clay-dark"
-        >
-          Add to basket · {gbp(price * qty)}
-        </Link>
-      </div>
-      <Link
-        href="/checkout"
-        className="flex h-14 items-center justify-center rounded-full bg-paypal text-base font-bold text-ink"
-      >
-        Buy now with PayPal
-      </Link>
+      ) : (
+        <>
+          <div className="flex gap-3">
+            <QuantityStepper value={qty} max={canAdd} onChange={(q) => setQty(Math.max(1, Math.min(canAdd, q)))} />
+            <button
+              onClick={() => {
+                addToBasket();
+                setAdded(true);
+                open();
+                setTimeout(() => setAdded(false), 2000);
+              }}
+              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-clay text-base font-semibold text-white transition-colors hover:bg-clay-dark"
+            >
+              {added ? (
+                <>
+                  <CheckIcon size={18} /> Added
+                </>
+              ) : (
+                <>Add to basket · {gbp(price * qty)}</>
+              )}
+            </button>
+          </div>
+          <button
+            onClick={() => {
+              addToBasket();
+              router.push("/checkout");
+            }}
+            className="flex h-14 items-center justify-center rounded-full bg-paypal text-base font-bold text-ink"
+          >
+            Buy now
+          </button>
+          {inBasket > 0 && (
+            <p className="text-sm text-subtle">
+              You have {inBasket} in your basket. {canAdd} more available.
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

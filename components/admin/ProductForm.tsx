@@ -9,6 +9,7 @@ import { categories } from "@/lib/data";
 import { slugify, type ShopProduct } from "@/lib/product-types";
 import { createClient } from "@/lib/supabase/client";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, TrashIcon } from "../Icons";
+import { uniqueId } from "@/lib/unique-id";
 
 // A photo already saved in storage has a path. A new one has a file waiting to upload.
 type Photo = { key: string; url: string; path?: string; file?: File };
@@ -95,7 +96,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           continue;
         }
         const blob = await compressImage(photo.file!);
-        const path = `${slug}/${crypto.randomUUID()}.jpg`;
+               const path = `${slug}/${uniqueId()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from(BUCKET)
           .upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
@@ -196,7 +197,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           e.preventDefault();
           save(editing ? (live ? "live" : "draft") : "live");
         }}
-        className="flex flex-col gap-[18px] px-4 py-5"
+                className="flex flex-col gap-[18px] px-4 pb-24 pt-5 lg:pb-10"
       >
         <div className="flex flex-col gap-2.5">
           <span className="text-sm font-semibold">
@@ -333,12 +334,21 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           </div>
         )}
 
-        <div className="sticky bottom-[92px] -mx-4 flex flex-col gap-2 border-t border-line bg-paper px-4 pb-4 pt-3 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0">
+                {/* Floating save button: hovers above the tab bar on phones */}
+        <div className="pointer-events-none sticky bottom-[100px] z-10 flex flex-col gap-2 lg:static">
           {error && (
-            <p role="alert" className="rounded-xl bg-[#f6ddd0] px-3.5 py-2.5 text-sm font-semibold text-clay-dark">{error}</p>
+            <p
+              role="alert"
+              className="pointer-events-auto rounded-xl bg-[#f6ddd0] px-3.5 py-2.5 text-sm font-semibold text-clay-dark shadow-[0_8px_24px_rgba(26,24,20,0.12)] lg:shadow-none"
+            >
+              {error}
+            </p>
           )}
           {notice && (
-            <p role="status" className="flex items-center gap-2 rounded-xl bg-jade-soft px-3.5 py-2.5 text-sm font-semibold text-jade">
+            <p
+              role="status"
+              className="pointer-events-auto flex items-center gap-2 rounded-xl bg-jade-soft px-3.5 py-2.5 text-sm font-semibold text-jade shadow-[0_8px_24px_rgba(26,24,20,0.12)] lg:shadow-none"
+            >
               <CheckIcon size={16} />
               {notice}
             </p>
@@ -346,7 +356,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           <button
             type="submit"
             disabled={busy !== ""}
-            className="h-[54px] w-full rounded-full bg-clay text-base font-semibold text-white hover:bg-clay-dark disabled:opacity-60"
+            className="pointer-events-auto h-[54px] w-full rounded-full bg-clay text-base font-semibold text-white shadow-[0_10px_30px_rgba(184,84,42,0.35)] hover:bg-clay-dark disabled:opacity-60 lg:shadow-none"
           >
             {saving ? "Saving..." : editing ? "Save changes" : "Publish product"}
           </button>

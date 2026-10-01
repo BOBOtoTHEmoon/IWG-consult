@@ -2,6 +2,10 @@
 // Confirm every value marked TODO with Goody before launch.
 export const site = {
   name: "Import with Goody",
+    // The live address. Set NEXT_PUBLIC_SITE_URL in Vercel if it ever changes.
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://www.importwithgoody.com").replace(/\/$/, ""),
+  description:
+    "Homeware, fashion, baby essentials and gifts, hand-picked from trusted makers in China and delivered in the UK and beyond. Custom sourcing on request.",
   legalName: "Import with Goody", // TODO: registered business or trading name
   address: "[Business address, United Kingdom]", // TODO
   email: "hello@importwithgoody.com", // TODO: the inbox customers should write to

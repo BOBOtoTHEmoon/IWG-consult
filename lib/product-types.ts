@@ -77,3 +77,15 @@ export const slugify = (text: string) =>
     .slice(0, 80) || "product";
 
 export const LOW_STOCK = 3;
+
+// ---------- Shop filters ----------
+
+export type SortOption = "newest" | "price-asc" | "price-desc";
+export type PriceRange = "under-15" | "15-30" | "30-50" | "over-50";
+
+export const PRICE_RANGES: { value: PriceRange; label: string; min?: number; max?: number }[] = [
+  { value: "under-15", label: "Under £15", max: 15 },
+  { value: "15-30", label: "£15 to £30", min: 15, max: 30 },
+  { value: "30-50", label: "£30 to £50", min: 30, max: 50 },
+  { value: "over-50", label: "Over £50", min: 50 },
+];

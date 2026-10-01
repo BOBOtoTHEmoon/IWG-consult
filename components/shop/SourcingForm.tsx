@@ -106,9 +106,10 @@ export default function SourcingForm() {
             <legend className="text-xl font-bold">Your list</legend>
             <span className="text-sm text-subtle">{ids.length === 1 ? "1 item" : `${ids.length} items`}</span>
           </div>
-          <p className="text-[15px] leading-relaxed text-muted">
+                    <p className="text-[15px] leading-relaxed text-muted">
             The more detail you give, the faster and more accurate your sourcing will be. Include sizes, colours,
-            materials and a photo or link if you have one.
+            materials and a photo or link if you have one. <strong className="text-ink">Not sure exactly what you want?</strong>{" "}
+            Describe what it&apos;s for and your budget, and Goody can suggest options.
           </p>
 
           {ids.map((id, i) => {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalIcon, PenIcon, SparkleIcon, TruckIcon } from "@/components/Icons";
+import { ExternalIcon, PenIcon, SparkleIcon, TruckIcon, MailIcon, } from "@/components/Icons";
 import { getStaff } from "@/lib/auth";
 import { signOut } from "../actions";
 
@@ -7,6 +7,7 @@ const items = [
   { href: "/admin/content", label: "Site content", body: "Homepage text, images and featured products", icon: PenIcon },
   { href: "/admin/assistant", label: "AI assistant", body: "What shoppers ask and the answers it uses", icon: SparkleIcon },
   { href: "/admin/delivery", label: "Delivery rates", body: "Royal Mail rates for UK and international", icon: TruckIcon },
+  { href: "/admin/subscribers", label: "Email sign-ups", body: "People who want to hear about new arrivals", icon: MailIcon },
 ];
 
 export default async function AdminMore() {
