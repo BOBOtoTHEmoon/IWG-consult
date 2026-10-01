@@ -1,7 +1,7 @@
 import { CheckIcon, LockIcon, TruckIcon } from "@/components/Icons";
 import Logo from "@/components/shop/Logo";
 import { gbp, products } from "@/lib/data";
-
+import Link from "next/link";
 export const metadata = { title: "Checkout | Import with Goody" };
 
 // Sample basket until basket state exists.
@@ -118,7 +118,11 @@ export default function CheckoutPage() {
             <button type="submit" className="h-[58px] rounded-full bg-paypal text-[17px] font-bold text-ink">
               Pay with PayPal
             </button>
-            <span className="text-center text-[13px] text-subtle">By placing your order you agree to our terms and returns policy.</span>
+          <span className="text-center text-[13px] text-subtle">
+  By placing your order you agree to our{" "}
+  <Link href="/terms" className="underline">terms</Link> and{" "}
+  <Link href="/returns" className="underline">returns policy</Link>.
+</span>
           </section>
         </div>
 

@@ -5,11 +5,10 @@ import { ArrowRightIcon, CheckIcon, ShieldIcon, TruckIcon } from "@/components/I
 import { categories, gbp, products } from "@/lib/data";
 
 const steps = [
-  ["Found at source", "Goody works directly with suppliers and factories in China, so there is no chain of middlemen."],
-  ["Checked before listing", "Samples are reviewed for quality and finish before anything goes on sale."],
-  ["Delivered to you", "Posted from the UK with Royal Mail, to UK and international addresses."],
+  ["Send your list", "Tell Goody what you want, with photos or links if you have them. A £50 commitment fee gets things started."],
+  ["She sources it", "Within 2 to 4 working days you get suppliers and the full product cost. Go ahead and the £50 comes back to you."],
+  ["Checked, shipped and tracked", "Quantity and quality are verified, the best shipping route is chosen, and your items are tracked to you."],
 ];
-
 export default function HomePage() {
   const newArrivals = products.slice(0, 4);
   const featured = products[0];
@@ -19,11 +18,9 @@ export default function HomePage() {
       {/* Hero */}
       <section className="mx-auto flex max-w-[1440px] flex-col gap-10 px-5 pb-16 pt-8 sm:px-10 lg:flex-row lg:items-center lg:gap-[72px] lg:px-20 lg:pb-24 lg:pt-[72px]">
         <div className="flex flex-col gap-5 lg:w-[600px] lg:shrink-0 lg:gap-7">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-clay sm:text-[13px]">
-            A UK sourcing studio with a shop
-          </span>
-          <h1 className="font-display text-[42px] font-medium leading-[1.03] tracking-[-0.02em] sm:text-6xl lg:text-[78px]">
-            Beautiful things, <em className="text-clay">sourced</em> with care.
+          
+                    <h1 className="font-display text-[44px] font-medium leading-[1.05] tracking-[-0.01em] sm:text-6xl lg:text-[76px]">
+            Beautiful things, <span className="text-clay">sourced</span> with care.
           </h1>
           <p className="max-w-[520px] text-base leading-relaxed text-muted sm:text-[19px]">
             Homeware, fashion, baby essentials and gifts, hand-picked from trusted makers in China and delivered to
@@ -68,23 +65,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="mx-auto flex max-w-[1440px] flex-col gap-8 px-5 pb-20 sm:px-10 lg:gap-9 lg:px-20 lg:pb-24 lg:pt-8">
-        <div className="flex items-end justify-between">
-          <h2 className="font-display text-3xl font-medium tracking-[-0.015em] sm:text-[46px]">Shop by category</h2>
-          <Link href="/shop" className="text-[15px] font-semibold">See everything</Link>
+            {/* Categories */}
+      <section className="mx-auto flex max-w-[1440px] flex-col gap-6 px-5 pb-16 sm:px-10 sm:gap-8 lg:gap-9 lg:px-20 lg:pb-24 lg:pt-8">
+        <div className="flex items-end justify-between gap-6">
+          <h2 className="font-display text-2xl tracking-[-0.015em] sm:text-[46px]">Shop by category</h2>
+          <Link
+            href="/shop"
+            className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-clay hover:text-clay-dark sm:text-[15px]"
+          >
+            View all <ArrowRightIcon size={16} />
+          </Link>
         </div>
-        <div className="-mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-5 lg:gap-5">
+        <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-2 after:w-2 after:shrink-0 after:content-[''] sm:mx-0 sm:grid sm:grid-cols-3 sm:scroll-px-0 sm:gap-4 sm:overflow-visible sm:px-0 sm:after:hidden lg:grid-cols-5 lg:gap-5">
           {categories.map((c) => (
             <Link
               key={c.slug}
               href={`/shop?category=${c.slug}`}
-              className="relative h-[260px] w-[220px] shrink-0 snap-start overflow-hidden rounded-[20px] sm:w-auto lg:h-[330px]"
+              className="relative h-[190px] w-[160px] shrink-0 snap-start overflow-hidden rounded-2xl sm:h-[260px] sm:w-auto sm:rounded-[20px] lg:h-[330px]"
             >
               <PhotoPlaceholder tint={c.tint} className="h-full w-full" />
-              <span className="absolute inset-x-3.5 bottom-3.5 flex h-12 items-center justify-between rounded-[14px] bg-paper px-4 text-[15px] font-semibold text-ink">
+              <span className="absolute inset-x-2.5 bottom-2.5 flex h-10 items-center justify-between rounded-xl bg-paper px-3 text-sm font-semibold text-ink sm:inset-x-3.5 sm:bottom-3.5 sm:h-12 sm:rounded-[14px] sm:px-4 sm:text-[15px]">
                 {c.name}
-                <ArrowRightIcon size={16} className="text-clay" />
+                <ArrowRightIcon size={15} className="shrink-0 text-clay" />
               </span>
             </Link>
           ))}
@@ -92,36 +94,53 @@ export default function HomePage() {
       </section>
 
       {/* New arrivals */}
-      <section className="mx-auto flex max-w-[1440px] flex-col gap-8 px-5 pb-20 sm:px-10 lg:gap-9 lg:px-20 lg:pb-28">
-        <div className="flex items-end justify-between">
-          <div className="flex flex-col gap-2.5">
+      <section className="mx-auto flex max-w-[1440px] flex-col gap-6 px-5 pb-20 sm:px-10 sm:gap-8 lg:gap-9 lg:px-20 lg:pb-28">
+        <div className="flex items-end justify-between gap-6">
+          <div className="flex flex-col gap-1.5 sm:gap-2.5">
             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-clay sm:text-[13px]">Just landed</span>
-            <h2 className="font-display text-3xl font-medium tracking-[-0.015em] sm:text-[46px]">New arrivals</h2>
+            <h2 className="font-display text-2xl tracking-[-0.015em] sm:text-[46px]">New arrivals</h2>
           </div>
-          <Link href="/shop" className="text-[15px] font-semibold">View all</Link>
+          <Link
+            href="/shop"
+            className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-clay hover:text-clay-dark sm:text-[15px]"
+          >
+            View all <ArrowRightIcon size={16} />
+          </Link>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4 lg:gap-6">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 sm:gap-y-8 lg:grid-cols-4 lg:gap-6">
           {newArrivals.map((p) => (
-            <ProductCard key={p.slug} product={p} />
+            <ProductCard key={p.slug} product={p} imageClass="h-[190px] sm:h-[300px] lg:h-[380px]" />
           ))}
         </div>
       </section>
 
-      {/* Story */}
+         {/* Sourcing */}
       <section className="bg-brown text-cream">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-12 px-5 py-20 sm:px-10 lg:flex-row lg:gap-24 lg:px-20 lg:py-[104px]">
           <div className="flex flex-col gap-6 lg:w-[560px] lg:shrink-0">
-            <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-gold">The Goody difference</span>
+            <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-gold">Sourcing services</span>
             <h2 className="font-display text-[34px] leading-[1.1] tracking-[-0.015em] sm:text-[52px] sm:leading-[1.08]">
-              Every piece is found at the source and looked over before it reaches you.
+              Can&apos;t find it in the shop? Goody will source it for you.
             </h2>
             <p className="text-base leading-relaxed text-[#e8d9c6] sm:text-lg">
-              Import with Goody started as a sourcing service for UK clients. The shop brings that same careful eye to a
-              small, considered collection, so you get a personal buyer&apos;s standards without the minimum order.
+              Import with Goody started as a sourcing service for UK clients, and it still is. Send her a list of
+              anything you want from China and she handles the suppliers, quality checks and shipping, for a service
+              charge of 10% of the product cost.
             </p>
-            <Link href="/sourcing" className="flex h-[52px] items-center self-start rounded-full bg-cream px-[26px] font-semibold text-brown">
-              Meet Goody
-            </Link>
+                        <div className="flex items-center gap-4 sm:gap-5">
+              <Link
+                href="/sourcing#request"
+                className="flex h-12 shrink-0 items-center rounded-full bg-cream px-5 text-[15px] font-semibold text-brown sm:h-[52px] sm:px-[26px] sm:text-base"
+              >
+                Start a sourcing request
+              </Link>
+              <Link
+                href="/sourcing"
+                className="flex h-12 shrink-0 items-center text-[15px] font-semibold text-cream underline underline-offset-4 sm:h-[52px] sm:text-base"
+              >
+                How it works
+              </Link>
+            </div>
           </div>
           <ol className="flex flex-1 flex-col">
             {steps.map(([title, body], i) => (
@@ -137,50 +156,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Sourcing CTA */}
+            {/* Newsletter */}
       <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-10 lg:px-20 lg:py-28">
-        <div className="flex flex-col overflow-hidden rounded-[28px] border border-line bg-paper lg:flex-row">
-          <div className="flex flex-1 flex-col justify-center gap-5 p-8 sm:p-16">
-            <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-jade">Sourcing services</span>
-            <h2 className="font-display text-3xl font-medium leading-[1.1] tracking-[-0.015em] sm:text-[44px]">
-              Looking for something we don&apos;t stock?
-            </h2>
-            <p className="max-w-[560px] text-base leading-relaxed text-muted sm:text-lg">
-              Send Goody a list of what you want from China. She finds the right suppliers, checks quality and quantity,
-              and gets it shipped to you, for a service charge of 10% of the product cost.
-            </p>
-            <div className="flex flex-wrap gap-3.5">
-              <Link href="/sourcing#request" className="flex h-[52px] items-center rounded-full bg-ink px-[26px] font-semibold text-cream">
-                Start a sourcing request
-              </Link>
-              <Link href="/sourcing" className="flex h-[52px] items-center px-2 font-semibold text-ink underline">
-                How it works
-              </Link>
-            </div>
+        <div className="flex flex-col justify-between gap-8 rounded-[28px] border border-line bg-paper p-8 sm:p-12 lg:flex-row lg:items-center lg:p-16">
+          <div className="flex flex-col gap-2.5">
+            <h2 className="font-display text-3xl sm:text-4xl">Be first to see new arrivals</h2>
+            <p className="text-base text-muted">One short email when new stock lands. No spam.</p>
           </div>
-          <PhotoPlaceholder tint="#efdcb5" label="Photo of Goody sourcing" className="min-h-[280px] lg:min-h-[420px] lg:w-[520px]" />
-        </div>
-      </section>
-
-      {/* Newsletter */}
-      <section className="mx-auto flex max-w-[1440px] flex-col justify-between gap-8 px-5 pb-20 sm:px-10 lg:flex-row lg:items-center lg:px-20 lg:pb-24">
-        <div className="flex flex-col gap-2.5">
-          <h2 className="font-display text-3xl font-medium sm:text-4xl">Be first to see new arrivals</h2>
-          <p className="text-base text-muted">One short email when new stock lands. No spam.</p>
-        </div>
-        {/* TODO: connect to Resend audience or Supabase table */}
-        <form className="flex flex-col gap-2.5 sm:flex-row sm:items-end">
-          <label className="flex flex-col gap-1.5 text-[13px] font-semibold">
-            Email address
+          {/* TODO: connect to Resend audience or Supabase table */}
+          <form className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email address
+            </label>
             <input
+              id="newsletter-email"
               type="email"
               required
-              placeholder="you@example.com"
-              className="h-[52px] rounded-full border-[1.5px] border-line-strong bg-paper px-[18px] text-base font-normal sm:w-[340px]"
+              autoComplete="email"
+              placeholder="Your email address"
+              className="h-[52px] rounded-full border-[1.5px] border-line-strong bg-white px-[18px] text-base sm:w-[340px]"
             />
-          </label>
-          <button className="h-[52px] rounded-full bg-clay px-[26px] font-semibold text-white hover:bg-clay-dark">Sign up</button>
-        </form>
+            <button className="h-[52px] shrink-0 rounded-full bg-clay px-[26px] font-semibold text-white hover:bg-clay-dark">
+              Sign up
+            </button>
+          </form>
+        </div>
       </section>
     </>
   );

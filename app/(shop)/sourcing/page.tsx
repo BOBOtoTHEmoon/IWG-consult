@@ -42,7 +42,7 @@ export default function SourcingPage() {
         <div className="flex flex-1 flex-col gap-6">
           <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-jade">Sourcing from China</span>
           <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.02em] sm:text-6xl lg:text-[70px]">
-            Tell us what you need. <em className="text-clay">We&apos;ll find it</em> in China.
+            Tell us what you need. <span className="text-clay">We&apos;ll find it</span>
           </h1>
           <p className="max-w-[600px] text-base leading-relaxed text-muted sm:text-[19px]">
             Send Goody a list of the products you want. She finds the right suppliers and gives you the full cost, then

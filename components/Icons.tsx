@@ -96,3 +96,27 @@ export const ListIcon = ({ className, size, strokeWidth }: P) => (
 export const ExternalIcon = ({ className, size, strokeWidth = 2 }: P) => (
   <svg {...base(size, strokeWidth)} className={className}><path d="M7 17L17 7" /><path d="M8 7h9v9" /></svg>
 );
+export const InstagramIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><rect x="2.5" y="2.5" width="19" height="19" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5h.01" /></svg>
+);
+export const LinkedinIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>
+);
+export const WhatsappIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" /></svg>
+);
+export const MailIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
+);
+export const CalendarIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><rect x="3" y="4.5" width="18" height="16.5" rx="2.5" /><path d="M3 9.5h18" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /></svg>
+);
+export const DotsIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><circle cx="5" cy="12" r="1.25" /><circle cx="12" cy="12" r="1.25" /><circle cx="19" cy="12" r="1.25" /></svg>
+);
+export const ChevronRightIcon = ({ className, size, strokeWidth = 2 }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><path d="M9 6l6 6-6 6" /></svg>
+);
+export const TrashIcon = ({ className, size, strokeWidth }: P) => (
+  <svg {...base(size, strokeWidth)} className={className}><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></svg>
+);

@@ -5,9 +5,10 @@ export const metadata = { title: "Admin | Import with Goody", robots: { index: f
 // TODO (backend phase): protect /admin with Supabase Auth (middleware + server check).
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-cream">
+    <div className="flex min-h-screen overflow-x-clip bg-cream">
       <AdminSidebar />
-      <div className="min-w-0 flex-1 pb-24 lg:pb-0">{children}</div>
+      {/* On phones, leave room under the content for the floating tab bar */}
+      <div className="min-w-0 flex-1 pb-28 lg:pb-0">{children}</div>
       <AdminTabBar />
     </div>
   );

@@ -1,18 +1,18 @@
+import Image from "next/image";
 import Link from "next/link";
 
-export default function Logo({ small = false }: { small?: boolean }) {
+export default function Logo({ small = false, light = false }: { small?: boolean; light?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-3 text-ink">
-      <span
-        className={`flex items-center justify-center rounded-full bg-clay font-display font-semibold text-cream ${
-          small ? "h-8 w-8 text-lg" : "h-9 w-9 text-xl sm:h-[38px] sm:w-[38px]"
-        }`}
-      >
-        G
-      </span>
-      <span className={`font-display font-semibold tracking-[-0.01em] ${small ? "text-lg" : "text-xl sm:text-[25px]"}`}>
-        Import with Goody
-      </span>
+    <Link href="/" className="flex items-center" aria-label="Import with Goody, home">
+      <Image
+        src="/logo.png"
+        alt="Import with Goody"
+        width={200}
+        height={60}
+        priority={!light}
+        unoptimized
+        className={`w-auto ${small ? "h-8" : "h-9 sm:h-11"}`}
+      />
     </Link>
   );
 }
