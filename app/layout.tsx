@@ -13,8 +13,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${fredoka.variable} ${figtree.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="en-GB" className={`${fredoka.variable} ${figtree.variable}`} suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        {/* Marks that JavaScript is running, so scroll animations can start hidden */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        {children}
+      </body>
     </html>
   );
 }

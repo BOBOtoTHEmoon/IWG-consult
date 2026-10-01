@@ -8,12 +8,30 @@ import { MinusIcon, PlusIcon } from "../Icons";
 export default function ProductBuyBox({
   price,
   colours,
+  stock,
 }: {
   price: number;
   colours?: { name: string; hex: string }[];
+  stock: number;
 }) {
   const [qty, setQty] = useState(1);
   const [colour, setColour] = useState(colours?.[0]?.name);
+  const soldOut = stock === 0;
+
+  if (soldOut) {
+    return (
+      <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
+        <span className="text-base font-semibold">Sold out for now</span>
+        <span className="text-[15px] text-muted">Want one anyway? Goody can source it for you.</span>
+        <Link
+          href="/sourcing#request"
+          className="mt-1 flex h-12 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-cream"
+        >
+          Request it through sourcing
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,13 +70,13 @@ export default function ProductBuyBox({
           <span className="w-8 text-center text-[17px] font-semibold" aria-live="polite">{qty}</span>
           <button
             aria-label="Increase quantity"
-            onClick={() => setQty((q) => q + 1)}
+            onClick={() => setQty((q) => Math.min(stock, q + 1))}
             className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
           >
             <PlusIcon size={18} />
           </button>
         </div>
-        {/* TODO: add to basket state (context or Supabase cart), then go to checkout */}
+        {/* TODO: add to basket state, then go to checkout */}
         <Link
           href="/checkout"
           className="flex h-14 flex-1 items-center justify-center rounded-full bg-clay text-base font-semibold text-white hover:bg-clay-dark"

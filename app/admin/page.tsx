@@ -1,6 +1,12 @@
 import Link from "next/link";
+import ProductImage from "@/components/ProductImage";
 import { CalendarIcon, PlusIcon, SparkleIcon } from "@/components/Icons";
-import { gbp, orders, products, statusTone } from "@/lib/data";
+import { getStaff } from "@/lib/auth";
+import { gbp } from "@/lib/data";
+import { STATUS_LABEL, STATUS_TONE, destination, shortName, type OrderStatus } from "@/lib/order-types";
+import { getMonthSales, getOrders } from "@/lib/orders";
+import { LOW_STOCK } from "@/lib/product-types";
+import { getAllProducts } from "@/lib/products";
 
 // Render on every visit so the greeting and date are always current.
 export const dynamic = "force-dynamic";
@@ -19,41 +25,54 @@ function ukNow() {
   };
 }
 
-const actionFor: Record<string, string> = {
-  "To pack": "Mark packed",
-  Packed: "Add tracking",
-  Shipped: "View",
-  Delivered: "View",
+const actionFor: Record<OrderStatus, string> = {
+  to_pack: "Mark packed",
+  packed: "Add tracking",
+  shipped: "View",
+  delivered: "View",
+  cancelled: "View",
 };
 
-const low = [
-  { slug: "hand-painted-fan-set", name: "Hand-painted fan set", left: "2 left", tint: "#efdcb5" },
-  { slug: "pleated-linen-midi-skirt", name: "Pleated linen midi skirt", left: "Size 14 sold out", tint: "#e9cfc6" },
-  { slug: "silk-hair-scarf", name: "Silk hair scarf", left: "1 left", tint: "#e4c9c2" },
-];
-
-const asked = [
-  "Do you deliver to Ireland?",
-  "Is the stoneware dishwasher safe?",
-  "When is the linen skirt back in size 14?",
-];
-
-export default function AdminOverview() {
+export default async function AdminOverview() {
   const { greeting, weekday, date } = ukNow();
-  const toPack = orders.filter((o) => o.status === "To pack").length;
+  const staff = await getStaff();
+  const name = staff?.firstName ?? "there";
+  const products = await getAllProducts();
+  const liveProducts = products.filter((p) => p.status === "live");
+  const drafts = products.length - liveProducts.length;
+  const low = liveProducts.filter((p) => p.stock <= LOW_STOCK).sort((a, b) => a.stock - b.stock);
+  const [allOrders, month] = await Promise.all([getOrders(50), getMonthSales()]);
+  const orders = allOrders.slice(0, 5);
+  const toPack = allOrders.filter((o) => o.status === "to_pack").length;
 
   const stats = [
-    { label: "Sales this month", value: "£1,284.50", note: "31 orders", noteClass: "font-semibold text-jade" },
-    { label: "Products live", value: String(products.length), note: "4 drafts waiting", noteClass: "text-subtle" },
-    { label: "Low stock", value: "5", note: "Under 3 left", noteClass: "text-subtle", valueClass: "text-clay" },
+    {
+      label: "Sales this month",
+      value: gbp(month.total),
+      note: month.count === 0 ? "No orders yet" : `${month.count} ${month.count === 1 ? "order" : "orders"}`,
+      noteClass: month.count > 0 ? "font-semibold text-jade" : "text-subtle",
+    },
+    {
+      label: "Products live",
+      value: String(liveProducts.length),
+      note: drafts > 0 ? `${drafts} ${drafts === 1 ? "draft" : "drafts"} waiting` : "No drafts",
+      noteClass: "text-subtle",
+    },
+    {
+      label: "Low stock",
+      value: String(low.length),
+      note: `${LOW_STOCK} or fewer left`,
+      noteClass: "text-subtle",
+      valueClass: low.length > 0 ? "text-clay" : "",
+    },
   ];
 
   return (
     <main className="flex flex-col gap-6 px-4 py-6 sm:gap-7 sm:px-8 lg:px-12 lg:py-9">
-            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-[30px] leading-tight tracking-[-0.015em] sm:text-[40px]">
-            {greeting}, Goody
+            {greeting}, {name}
           </h1>
           <span className="inline-flex items-center gap-2 self-start rounded-full border border-line bg-paper py-1.5 pl-2.5 pr-3.5 text-sm">
             <CalendarIcon size={16} className="text-clay" />
@@ -100,18 +119,24 @@ export default function AdminOverview() {
             <Link href="/admin/orders" className="text-sm font-semibold">All orders</Link>
           </div>
 
+          {orders.length === 0 && (
+            <p className="border-t border-[#ece3d5] pt-4 text-sm text-muted">
+              No orders yet. They&apos;ll appear here as soon as someone checks out.
+            </p>
+          )}
+
           {/* Phones: compact list */}
-          <ul className="flex flex-col sm:hidden">
+          <ul className={`flex flex-col sm:hidden ${orders.length === 0 ? "hidden" : ""}`}>
             {orders.map((o) => (
-                            <li key={o.id} className="border-t border-[#ece3d5]">
-                <Link href={`/admin/orders/${o.id}`} className="flex items-center gap-3 py-3 text-ink">
+              <li key={o.id} className="border-t border-[#ece3d5]">
+                <Link href={`/admin/orders/${o.number}`} className="flex items-center gap-3 py-3 text-ink">
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-[15px] font-semibold">{o.customer}</span>
-                    <span className="truncate text-[13px] text-subtle">#{o.id} | {o.destination}</span>
+                    <span className="text-[15px] font-semibold">{shortName(o.customerName)}</span>
+                    <span className="truncate text-[13px] text-subtle">#{o.number} | {destination(o)}</span>
                   </span>
                   <span className="flex flex-col items-end gap-1">
                     <span className="text-[15px] font-semibold">{gbp(o.total)}</span>
-                    <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold ${statusTone[o.status]}`}>{o.status}</span>
+                    <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold ${STATUS_TONE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
                   </span>
                 </Link>
               </li>
@@ -119,7 +144,7 @@ export default function AdminOverview() {
           </ul>
 
           {/* Tablet and up: full table */}
-          <div className="hidden overflow-x-auto sm:block">
+          <div className={`hidden overflow-x-auto ${orders.length > 0 ? "sm:block" : ""}`}>
             <table className="w-full min-w-[640px] text-left text-[15px]">
               <thead>
                 <tr className="border-b border-[#ece3d5] text-[13px] text-subtle">
@@ -134,22 +159,22 @@ export default function AdminOverview() {
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.id} className="h-[58px] border-b border-[#ece3d5]">
-<td className="font-semibold">
-  <Link href={`/admin/orders/${o.id}`} className="text-ink hover:text-clay">#{o.id}</Link>
-</td>
-                    <td>{o.customer}</td>
-                    <td className="text-muted">{o.destination}</td>
+                    <td className="font-semibold">
+                      <Link href={`/admin/orders/${o.number}`} className="text-ink hover:text-clay">#{o.number}</Link>
+                    </td>
+                    <td>{shortName(o.customerName)}</td>
+                    <td className="text-muted">{destination(o)}</td>
                     <td>{gbp(o.total)}</td>
                     <td>
-                      <span className={`inline-flex h-7 items-center rounded-full px-3 text-[13px] font-semibold ${statusTone[o.status]}`}>{o.status}</span>
+                      <span className={`inline-flex h-7 items-center rounded-full px-3 text-[13px] font-semibold ${STATUS_TONE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
                     </td>
                     <td className="text-right">
                       <Link
-  href={`/admin/orders/${o.id}`}
-  className="inline-flex h-10 items-center rounded-full border-[1.5px] border-line-strong bg-white px-3.5 text-sm font-semibold text-ink"
->
-  {actionFor[o.status]}
-</Link>
+                        href={`/admin/orders/${o.number}`}
+                        className="inline-flex h-10 items-center rounded-full border-[1.5px] border-line-strong bg-white px-3.5 text-sm font-semibold text-ink"
+                      >
+                        {actionFor[o.status]}
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -164,19 +189,20 @@ export default function AdminOverview() {
               <h2 className="text-lg font-bold sm:text-[19px]">Running low</h2>
               <Link href="/admin/products" className="text-sm font-semibold">All products</Link>
             </div>
-            {low.map((l) => (
-              <div key={l.name} className="flex items-center gap-3">
-                <span className="h-11 w-11 shrink-0 rounded-[10px]" style={{ background: l.tint }} />
+            {low.length === 0 && <p className="text-sm text-muted">Everything is well stocked.</p>}
+            {low.slice(0, 5).map((l) => (
+              <div key={l.id} className="flex items-center gap-3">
+                <ProductImage src={l.images[0]} alt="" tint={l.tint} className="h-11 w-11 shrink-0 rounded-[10px]" />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate text-[15px] font-semibold">{l.name}</span>
-                  <span className="text-[13px] font-semibold text-clay">{l.left}</span>
+                  <span className="text-[13px] font-semibold text-clay">{l.stock === 0 ? "Sold out" : `${l.stock} left`}</span>
                 </span>
-               <Link
-  href={`/admin/products/${l.slug}`}
-  className="flex h-9 shrink-0 items-center rounded-full bg-[#f0e6d8] px-3 text-[13px] font-semibold text-ink"
->
-  Update
-</Link>
+                <Link
+                  href={`/admin/products/${l.slug}`}
+                  className="flex h-9 shrink-0 items-center rounded-full bg-[#f0e6d8] px-3 text-[13px] font-semibold text-ink"
+                >
+                  Update
+                </Link>
               </div>
             ))}
           </section>
@@ -185,10 +211,10 @@ export default function AdminOverview() {
               <SparkleIcon className="text-gold" />
               <h2 className="text-[17px] font-bold">What shoppers asked this week</h2>
             </div>
-            {asked.map((q) => (
-              <span key={q} className="rounded-xl bg-cream/10 px-3.5 py-3 text-[15px]">{q}</span>
-            ))}
-            <Link href="/admin/assistant" className="text-sm font-semibold text-[#e8c98f]">Teach the assistant an answer</Link>
+            {/* TODO (AI phase): show the most asked questions from the assistant's chat log. */}
+            <p className="text-[15px] leading-relaxed text-[#e8d9c6]">
+              Once the Ask Goody assistant is live, the questions shoppers ask most will show up here.
+            </p>
           </section>
         </div>
       </div>

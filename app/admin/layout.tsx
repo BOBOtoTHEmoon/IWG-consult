@@ -1,15 +1,23 @@
+import { redirect } from "next/navigation";
 import { AdminSidebar, AdminTabBar } from "@/components/admin/AdminNav";
+import { getStaff } from "@/lib/auth";
+import { getToPackCount } from "@/lib/orders";
 
 export const metadata = { title: "Admin | Import with Goody", robots: { index: false } };
 
-// TODO (backend phase): protect /admin with Supabase Auth (middleware + server check).
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // The middleware already sends signed-out visitors to /login.
+  // This also blocks signed-in accounts that aren't staff.
+  const staff = await getStaff();
+  if (!staff) redirect("/login?error=not-staff");
+  const toPack = await getToPackCount();
+
   return (
     <div className="flex min-h-screen overflow-x-clip bg-cream">
-      <AdminSidebar />
+      <AdminSidebar staffName={staff.fullName} toPack={toPack} />
       {/* On phones, leave room under the content for the floating tab bar */}
       <div className="min-w-0 flex-1 pb-28 lg:pb-0">{children}</div>
-      <AdminTabBar />
+      <AdminTabBar toPack={toPack} />
     </div>
   );
 }

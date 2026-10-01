@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ExternalIcon, PenIcon, SparkleIcon, TruckIcon } from "@/components/Icons";
+import { getStaff } from "@/lib/auth";
+import { signOut } from "../actions";
 
 const items = [
   { href: "/admin/content", label: "Site content", body: "Homepage text, images and featured products", icon: PenIcon },
@@ -7,7 +9,8 @@ const items = [
   { href: "/admin/delivery", label: "Delivery rates", body: "Royal Mail rates for UK and international", icon: TruckIcon },
 ];
 
-export default function AdminMore() {
+export default async function AdminMore() {
+  const staff = await getStaff();
   return (
     <main className="mx-auto flex max-w-[720px] flex-col gap-5 px-4 py-6 sm:px-8 lg:py-9">
       <h1 className="font-display text-[30px] leading-tight sm:text-[40px]">More</h1>
@@ -32,6 +35,13 @@ export default function AdminMore() {
       >
         View live shop <ExternalIcon size={16} />
       </Link>
+            <Link
+        href="/set-password"
+        className="flex h-12 items-center justify-center rounded-full border-[1.5px] border-line-strong bg-paper text-[15px] font-semibold text-ink"
+      >
+        Change password
+      </Link>
     </main>
+    
   );
 }

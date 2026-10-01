@@ -3,79 +3,172 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { refreshShop } from "@/app/admin/actions";
+import { compressImage } from "@/lib/compress-image";
+import { categories } from "@/lib/data";
+import { slugify, type ShopProduct } from "@/lib/product-types";
+import { createClient } from "@/lib/supabase/client";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, TrashIcon } from "../Icons";
-import { categories, type Product } from "@/lib/data";
 
-type Photo = { id: string; url?: string; tint?: string };
+// A photo already saved in storage has a path. A new one has a file waiting to upload.
+type Photo = { key: string; url: string; path?: string; file?: File };
 
+const BUCKET = "product-images";
 const input = "h-[52px] w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3.5 text-base font-normal";
 const label = "flex flex-col gap-2 text-sm font-semibold";
 
-export default function ProductForm({
-  product,
-  stock,
-}: {
-  product?: Product; // present when editing
-  stock?: number;
-}) {
+export default function ProductForm({ product }: { product?: ShopProduct }) {
   const router = useRouter();
   const editing = Boolean(product);
 
   const [name, setName] = useState(product?.name ?? "");
   const [price, setPrice] = useState(product ? product.price.toFixed(2) : "");
-  const [qty, setQty] = useState(stock !== undefined ? String(stock) : "");
+  const [stock, setStock] = useState(product ? String(product.stock) : "");
   const [category, setCategory] = useState(product?.category ?? categories[0].slug);
-  const [weight, setWeight] = useState("");
+  const [weight, setWeight] = useState(product?.weightGrams ? String(product.weightGrams) : "");
   const [description, setDescription] = useState(product?.description ?? "");
-  const [visible, setVisible] = useState(true);
+  const [tag, setTag] = useState(product?.tag ?? "");
+  const [live, setLive] = useState(product ? product.status === "live" : true);
   const [photos, setPhotos] = useState<Photo[]>(
-    product ? [{ id: "cover", tint: product.tint }] : []
+    product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
+  const [removedPaths, setRemovedPaths] = useState<string[]>([]);
+  const [busy, setBusy] = useState<"" | "saving" | "deleting">("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const urls = useRef<string[]>([]);
+  const previews = useRef<string[]>([]);
 
   // Free the preview URLs when leaving the page.
-  useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+  useEffect(() => () => previews.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
   function addPhotos(files: FileList | null) {
     if (!files) return;
-    const added = Array.from(files).map((f) => {
-      const url = URL.createObjectURL(f);
-      urls.current.push(url);
-      return { id: url, url };
+    const added = Array.from(files).map((file) => {
+      const url = URL.createObjectURL(file);
+      previews.current.push(url);
+      return { key: url, url, file };
     });
     setPhotos((p) => [...p, ...added]);
   }
 
-  function makeCover(id: string) {
+  function removePhoto(photo: Photo) {
+    setPhotos((all) => all.filter((p) => p.key !== photo.key));
+    if (photo.path) setRemovedPaths((r) => [...r, photo.path!]);
+  }
+
+  function makeCover(key: string) {
     setPhotos((p) => {
-      const chosen = p.find((x) => x.id === id);
-      return chosen ? [chosen, ...p.filter((x) => x.id !== id)] : p;
+      const chosen = p.find((x) => x.key === key);
+      return chosen ? [chosen, ...p.filter((x) => x.key !== key)] : p;
     });
   }
 
-  function save(intent: "draft" | "publish") {
+  // Find a free URL name: "rattan-basket", then "rattan-basket-2", and so on.
+  async function uniqueSlug(base: string) {
+    const supabase = createClient();
+    const { data } = await supabase.from("products").select("slug").like("slug", `${base}%`);
+    const taken = new Set((data ?? []).map((r) => r.slug));
+    if (!taken.has(base)) return base;
+    let n = 2;
+    while (taken.has(`${base}-${n}`)) n++;
+    return `${base}-${n}`;
+  }
+
+  async function save(status: "draft" | "live") {
     setNotice("");
     if (!name.trim()) return setError("Add a product name.");
     if (!(Number(price) > 0)) return setError("Add a price greater than £0.");
-    if (intent === "publish" && photos.length === 0) return setError("Add at least one photo before publishing.");
+    if (status === "live" && photos.length === 0) return setError("Add at least one photo before it goes live.");
     setError("");
-    // TODO (backend phase): upload photos to Supabase Storage and insert or update the product.
-    setNotice(
-      intent === "draft"
-        ? "Saved as a draft. It won't show in the shop yet."
-        : editing
-          ? "Changes saved."
-          : "Product published. It's now live in the shop."
-    );
+    setBusy("saving");
+
+    const supabase = createClient();
+    try {
+      const slug = product?.slug ?? (await uniqueSlug(slugify(name)));
+
+      // 1. Upload new photos (shrunk first), keeping the order shown on screen.
+      const paths: string[] = [];
+      for (const photo of photos) {
+        if (photo.path) {
+          paths.push(photo.path);
+          continue;
+        }
+        const blob = await compressImage(photo.file!);
+        const path = `${slug}/${crypto.randomUUID()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
+        if (uploadError) throw new Error("A photo didn't upload. Check your connection and try again.");
+        paths.push(path);
+      }
+
+      // 2. Save the product.
+      const row = {
+        name: name.trim(),
+        price: Number(Number(price).toFixed(2)),
+        stock: Math.max(0, Math.floor(Number(stock) || 0)),
+        category,
+        weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
+        description: description.trim(),
+        tag: tag.trim() || null,
+        status,
+        images: paths,
+      };
+
+      const { error: saveError } = product
+        ? await supabase.from("products").update(row).eq("id", product.id)
+        : await supabase.from("products").insert({ ...row, slug });
+      if (saveError) throw new Error("We couldn't save the product. Please try again.");
+
+      // 3. Clean up photos that were removed.
+      if (removedPaths.length) {
+        await supabase.storage.from(BUCKET).remove(removedPaths);
+        setRemovedPaths([]);
+      }
+
+      await refreshShop(slug);
+
+      if (!product) {
+        router.push("/admin/products");
+        router.refresh();
+        return;
+      }
+      // Swap freshly uploaded photos for their saved versions.
+      setPhotos(
+        paths.map((path) => ({
+          key: path,
+          path,
+          url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
+        }))
+      );
+      setLive(status === "live");
+      setNotice(status === "live" ? "Saved. It's live in the shop." : "Saved. It's hidden from the shop.");
+      router.refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy("");
+    }
   }
 
-  function remove() {
-    // TODO (backend phase): delete from Supabase.
+  async function remove() {
+    if (!product) return;
+    setBusy("deleting");
+    const supabase = createClient();
+    const { error: deleteError } = await supabase.from("products").delete().eq("id", product.id);
+    if (deleteError) {
+      setBusy("");
+      setError("We couldn't delete the product. Please try again.");
+      return;
+    }
+    if (product.imagePaths.length) await supabase.storage.from(BUCKET).remove(product.imagePaths);
+    await refreshShop(product.slug);
     router.push("/admin/products");
+    router.refresh();
   }
+
+  const saving = busy === "saving";
 
   return (
     <main className="mx-auto flex max-w-[720px] flex-col">
@@ -86,32 +179,37 @@ export default function ProductForm({
         <h1 className="min-w-0 flex-1 truncate text-lg font-bold lg:font-display lg:text-[32px] lg:font-normal">
           {editing ? "Edit product" : "New product"}
         </h1>
-        <button onClick={() => save("draft")} className="h-10 shrink-0 px-3 text-[15px] font-semibold text-clay">
-          Save draft
-        </button>
+        {!editing && (
+          <button onClick={() => save("draft")} disabled={saving} className="h-10 shrink-0 px-3 text-[15px] font-semibold text-clay disabled:opacity-50">
+            Save draft
+          </button>
+        )}
+        {editing && (
+          <Link href={`/product/${product!.slug}`} target="_blank" className="h-10 shrink-0 px-3 text-[15px] font-semibold leading-10 text-clay">
+            View
+          </Link>
+        )}
       </header>
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          save("publish");
+          save(editing ? (live ? "live" : "draft") : "live");
         }}
         className="flex flex-col gap-[18px] px-4 py-5"
       >
         <div className="flex flex-col gap-2.5">
           <span className="text-sm font-semibold">
-            Photos <span className="font-normal text-subtle">(first one is the cover, tap a photo to make it the cover)</span>
+            Photos <span className="font-normal text-subtle">(the first is the cover. Tap a photo to make it the cover)</span>
           </span>
           <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
             {photos.map((p, i) => (
-              <div key={p.id} className="relative h-28 overflow-hidden rounded-[14px]" style={{ background: p.tint ?? "#efe5d4" }}>
-                {p.url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.url} alt="" className="h-full w-full object-cover" />
-                )}
+              <div key={p.key} className="relative h-28 overflow-hidden rounded-[14px] bg-[#efe5d4]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt="" className="h-full w-full object-cover" />
                 <button
                   type="button"
-                  onClick={() => makeCover(p.id)}
+                  onClick={() => makeCover(p.key)}
                   aria-label={i === 0 ? "Cover photo" : "Make this the cover photo"}
                   className="absolute inset-0"
                 />
@@ -122,7 +220,7 @@ export default function ProductForm({
                 )}
                 <button
                   type="button"
-                  onClick={() => setPhotos((all) => all.filter((x) => x.id !== p.id))}
+                  onClick={() => removePhoto(p)}
                   aria-label="Remove photo"
                   className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-paper/90 text-ink"
                 >
@@ -132,8 +230,17 @@ export default function ProductForm({
             ))}
             <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-[#b3a591] bg-paper text-[13px] font-semibold text-muted">
               <CameraIcon size={22} />
-              Add photo
-              <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => addPhotos(e.target.files)} />
+              Add photos
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                onChange={(e) => {
+                  addPhotos(e.target.files);
+                  e.target.value = "";
+                }}
+              />
             </label>
           </div>
         </div>
@@ -150,7 +257,7 @@ export default function ProductForm({
           </label>
           <label className={label}>
             In stock
-            <input value={qty} onChange={(e) => setQty(e.target.value)} type="number" min={0} placeholder="0" className={input} />
+            <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} placeholder="0" className={input} />
           </label>
         </div>
 
@@ -175,16 +282,28 @@ export default function ProductForm({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={4}
+            rows={5}
             placeholder="What is it, what is it made of, and why will they love it?"
             className="resize-none rounded-xl border-[1.5px] border-line-strong bg-white px-3.5 py-3 text-base font-normal leading-normal"
           />
         </label>
 
-        <label className="flex min-h-[52px] items-center justify-between rounded-[14px] border border-line bg-white px-4 text-[15px] font-semibold">
-          Show in shop
-          <input type="checkbox" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="h-[22px] w-[22px] accent-jade" />
+        <label className={label}>
+          <span>
+            Label on the photo <span className="font-normal text-subtle">(optional, e.g. New, Gift idea)</span>
+          </span>
+          <input value={tag} onChange={(e) => setTag(e.target.value)} maxLength={20} className={input} />
         </label>
+
+        {editing && (
+          <label className="flex min-h-[52px] items-center justify-between rounded-[14px] border border-line bg-white px-4 text-[15px] font-semibold">
+            <span className="flex flex-col gap-0.5">
+              Show in shop
+              <span className="text-[13px] font-normal text-subtle">{live ? "Shoppers can see and buy it" : "Hidden from shoppers"}</span>
+            </span>
+            <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} className="h-[22px] w-[22px] accent-jade" />
+          </label>
+        )}
 
         {editing && (
           <div className="rounded-[14px] border border-line bg-paper p-4">
@@ -195,8 +314,13 @@ export default function ProductForm({
                   <button type="button" onClick={() => setConfirmDelete(false)} className="h-11 rounded-full border-[1.5px] border-line-strong bg-white font-semibold">
                     Keep it
                   </button>
-                  <button type="button" onClick={remove} className="h-11 rounded-full bg-clay-dark font-semibold text-white">
-                    Delete
+                  <button
+                    type="button"
+                    onClick={remove}
+                    disabled={busy !== ""}
+                    className="h-11 rounded-full bg-clay-dark font-semibold text-white disabled:opacity-60"
+                  >
+                    {busy === "deleting" ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </div>
@@ -219,8 +343,12 @@ export default function ProductForm({
               {notice}
             </p>
           )}
-          <button type="submit" className="h-[54px] w-full rounded-full bg-clay text-base font-semibold text-white hover:bg-clay-dark">
-            {editing ? "Save changes" : "Publish product"}
+          <button
+            type="submit"
+            disabled={busy !== ""}
+            className="h-[54px] w-full rounded-full bg-clay text-base font-semibold text-white hover:bg-clay-dark disabled:opacity-60"
+          >
+            {saving ? "Saving..." : editing ? "Save changes" : "Publish product"}
           </button>
         </div>
       </form>

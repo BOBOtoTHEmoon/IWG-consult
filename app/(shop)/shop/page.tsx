@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ProductCard from "@/components/shop/ProductCard";
-import { categories, products } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { getLiveProducts } from "@/lib/products";
 
 export const metadata = { title: "Shop all | Import with Goody" };
 
@@ -20,7 +21,7 @@ export default async function ShopPage({
 }) {
   const { category } = await searchParams;
   const active = categories.find((c) => c.slug === category);
-  const list = active ? products.filter((p) => p.category === active.slug) : products;
+    const list = await getLiveProducts({ category: active?.slug });
 
   const pill = (on: boolean) =>
     `flex h-11 shrink-0 items-center rounded-full px-5 text-[15px] ${
