@@ -3,11 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export type BasketItem = {
-  key: string; // productId plus colour, so two colours of one product are separate lines
+  key: string; // productId plus option, so black and brown of one wig are separate lines
   productId: string;
   slug: string;
   name: string;
-  colour?: string;
+  variant?: string; // e.g. "Black"
+  variantLabel?: string; // e.g. "Colour"
   price: number;
   image?: string;
   tint: string;
@@ -32,8 +33,10 @@ type BasketContext = {
   close: () => void;
 };
 
-const STORAGE_KEY = "iwg-basket-v1";
+const STORAGE_KEY = "iwg-basket-v2";
 const Ctx = createContext<BasketContext | null>(null);
+
+export const basketKey = (productId: string, variant?: string) => `${productId}${variant ? `:${variant}` : ""}`;
 
 export function useBasket() {
   const ctx = useContext(Ctx);
@@ -81,8 +84,8 @@ export default function BasketProvider({ children }: { children: React.ReactNode
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const add = useCallback((input: AddInput, qty: number) => {
-    const key = `${input.productId}${input.colour ? `:${input.colour}` : ""}`;
+  const add = useCallback((input: AddInput, qty: number) => {  
+      const key = basketKey(input.productId, input.variant);
     setItems((current) => {
       const existing = current.find((i) => i.key === key);
       if (existing) {

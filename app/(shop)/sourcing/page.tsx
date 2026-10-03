@@ -1,16 +1,19 @@
 import Link from "next/link";
-import SourcingForm from "@/components/shop/SourcingForm";
+import Reveal from "@/components/Reveal";
+import StickyRequestButton from "@/components/shop/StickyRequestButton";
 import { ArrowRightIcon, CalendarIcon, CheckboxIcon, InfoIcon, RouteIcon, SearchIcon } from "@/components/Icons";
+
 export const metadata = {
   title: "Sourcing services | Import with Goody",
   description:
     "Send Goody a list of what you want from China. £50 commitment fee, refunded when you go ahead. 10% service charge on the product cost.",
+  alternates: { canonical: "/sourcing" },
 };
 
 const glance = [
-  ["£50", "Commitment fee to start. You get it back when you go ahead with your order."],
-  ["10%", "Service charge on the total product cost from China."],
-  ["2 to 4 days", "Working days to receive your sourced products and full cost."],
+  { big: "£50", small: "To start, refunded when you go ahead" },
+  { big: "10%", small: "Service charge on the product cost" },
+  { big: "2 to 4", small: "Working days to get your quote" },
 ];
 
 const steps = [
@@ -40,136 +43,167 @@ export default function SourcingPage() {
   return (
     <div className="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-20">
       {/* Hero */}
-      <section className="flex flex-col gap-10 pb-20 pt-10 lg:flex-row lg:items-center lg:gap-20 lg:pb-24 lg:pt-20">
-        <div className="flex flex-1 flex-col gap-6">
-          <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-jade">Sourcing from China</span>
-          <h1 className="font-display text-[40px] font-medium leading-[1.05] tracking-[-0.02em] sm:text-6xl lg:text-[70px]">
-            Tell us what you need. <span className="text-clay">We&apos;ll find it</span>
+      <section className="flex flex-col gap-8 pb-14 pt-8 lg:flex-row lg:items-center lg:gap-20 lg:pb-24 lg:pt-20">
+        <div className="flex flex-1 flex-col gap-5 lg:gap-6">
+          <span className="animate-fade-up text-xs font-semibold uppercase tracking-[0.14em] text-jade sm:text-[13px]">Sourcing from China</span>
+          <h1
+            className="animate-fade-up font-display text-[36px] leading-[1.05] tracking-[-0.02em] sm:text-6xl lg:text-[70px]"
+            style={{ animationDelay: "80ms" }}
+          >
+            Tell us what you need. <span className="text-clay">We&apos;ll find it</span> in China.
           </h1>
-          <p className="max-w-[600px] text-base leading-relaxed text-muted sm:text-[19px]">
+          <p className="animate-fade-up max-w-[600px] text-base leading-relaxed text-muted sm:text-[19px]" style={{ animationDelay: "160ms" }}>
             Send Goody a list of the products you want. She finds the right suppliers and gives you the full cost, then
             checks, ships and tracks your order all the way to you.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-3.5">
-            <Link href="#request" className="flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-clay px-7 font-semibold text-white hover:bg-clay-dark">
-              Start your request <ArrowRightIcon size={18} />
+          <div className="animate-fade-up flex flex-col gap-3 sm:flex-row sm:gap-3.5" style={{ animationDelay: "240ms" }}>
+            <Link
+              id="hero-request-button"
+              href="/sourcing/request"
+              className="group flex h-[54px] items-center justify-center gap-2.5 rounded-full bg-clay px-7 font-semibold text-white hover:bg-clay-dark"
+            >
+              Start your request
+              <ArrowRightIcon size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-            <Link href="#pricing" className="flex h-[54px] items-center justify-center rounded-full border-[1.5px] border-ink px-[26px] font-semibold text-ink">
+            <Link
+              href="#pricing"
+              className="hidden h-[54px] items-center justify-center rounded-full border-[1.5px] border-ink px-[26px] font-semibold text-ink sm:flex"
+            >
               How pricing works
             </Link>
           </div>
         </div>
-        <div className="flex flex-col rounded-[28px] bg-ink p-7 text-cream sm:p-9 lg:w-[460px] lg:shrink-0">
-          <span className="pb-3.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-gold">At a glance</span>
-          {glance.map(([big, small]) => (
-            <div key={big} className="flex flex-col gap-1.5 border-t border-[#3a342c] py-5 last:pb-0">
-              <span className="font-display text-4xl sm:text-[44px]">{big}</span>
-              <span className="text-base text-[#d9cfc0]">{small}</span>
+
+        {/* At a glance: three across on phones, stacked in a card on desktop */}
+        <div className="animate-fade-up grid grid-cols-3 gap-2 rounded-[24px] bg-ink p-3 text-cream sm:gap-3 sm:p-5 lg:flex lg:w-[440px] lg:shrink-0 lg:flex-col lg:gap-0 lg:rounded-[28px] lg:p-9" style={{ animationDelay: "200ms" }}>
+          <span className="hidden pb-3.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-gold lg:block">At a glance</span>
+          {glance.map((g) => (
+            <div key={g.big} className="flex flex-col gap-1 rounded-2xl bg-ink-soft p-3 lg:gap-1.5 lg:rounded-none lg:border-t lg:border-[#3a342c] lg:bg-transparent lg:px-0 lg:py-5 lg:last:pb-0">
+              <span className="font-display text-2xl leading-none sm:text-3xl lg:text-[44px]">{g.big}</span>
+              <span className="text-xs leading-snug text-[#d9cfc0] sm:text-sm lg:text-base">{g.small}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Steps */}
-      <section className="flex flex-col gap-10 pb-20 lg:pb-28">
-        <h2 className="font-display text-3xl font-medium tracking-[-0.015em] sm:text-[46px]">How it works</h2>
-        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Steps: a tight numbered list on phones, cards from tablet up */}
+      <section className="flex flex-col gap-6 pb-14 lg:gap-10 lg:pb-28">
+        <Reveal>
+          <h2 className="font-display text-[28px] tracking-[-0.015em] sm:text-[46px]">How it works</h2>
+        </Reveal>
+        <ol className="flex flex-col sm:grid sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {steps.map(([title, body], i) => (
-            <li key={title} className="flex flex-col gap-3.5 rounded-[22px] border border-line bg-paper p-7">
-              <span className={`flex h-11 w-11 items-center justify-center rounded-full font-display text-xl text-white ${i === 3 ? "bg-jade" : "bg-clay"}`}>
-                {i + 1}
-              </span>
-              <span className="text-xl font-bold">{title}</span>
-              <span className="text-[15px] leading-relaxed text-muted">{body}</span>
+            <li key={title} className="border-t border-line py-4 first:border-t-0 first:pt-0 sm:border-t-0 sm:p-0">
+              <Reveal
+                delay={i * 80}
+                className="flex gap-4 sm:h-full sm:flex-col sm:gap-3.5 sm:rounded-[22px] sm:border sm:border-line sm:bg-paper sm:p-7"
+              >
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-display text-base text-white sm:h-11 sm:w-11 sm:text-xl ${
+                    i === 3 ? "bg-jade" : "bg-clay"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="flex flex-col gap-1 sm:gap-3.5">
+                  <span className="text-base font-bold sm:text-xl">{title}</span>
+                  <span className="text-sm leading-relaxed text-muted sm:text-[15px]">{body}</span>
+                </span>
+              </Reveal>
             </li>
           ))}
         </ol>
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="scroll-mt-28 pb-20 lg:pb-28">
-        <div className="flex flex-col gap-10 rounded-[32px] bg-sand p-6 sm:p-16 lg:flex-row lg:items-start lg:gap-16">
-          <div className="flex flex-1 flex-col gap-5">
-            <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-clay">Simple pricing</span>
-            <h2 className="font-display text-3xl font-medium leading-[1.1] tracking-[-0.015em] sm:text-[44px]">
+      <section id="pricing" className="scroll-mt-28 pb-14 lg:pb-28">
+        <Reveal className="flex flex-col gap-6 rounded-[24px] bg-sand p-5 sm:rounded-[32px] sm:p-12 lg:flex-row lg:items-start lg:gap-16 lg:p-16">
+          <div className="flex flex-1 flex-col gap-4 sm:gap-5">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-clay sm:text-[13px]">Simple pricing</span>
+            <h2 className="font-display text-[26px] leading-[1.15] tracking-[-0.015em] sm:text-[44px] sm:leading-[1.1]">
               You only pay for our service when you go ahead.
             </h2>
-            <p className="text-[17px] leading-relaxed text-muted">
-              The £50 commitment fee shows us you are serious and lets us start sourcing straight away. When you go ahead
-              with the purchase, you pay 10% of the product cost as our service charge and the £50 comes back to you.
+            <p className="text-[15px] leading-relaxed text-muted sm:text-[17px]">
+              The £50 commitment fee lets us start sourcing straight away. When you go ahead, you pay 10% of the product
+              cost as our service charge and the £50 comes back to you.
             </p>
-            <div className="flex items-start gap-3.5 rounded-2xl border border-line bg-paper p-5">
-              <InfoIcon size={22} className="mt-px shrink-0 text-clay-dark" />
-              <span className="text-[15px] leading-relaxed">
-                <strong>If you decide not to go ahead,</strong> the £50 is not refunded, because it covers the sourcing
-                work we have already completed for you.
+            <div className="flex items-start gap-3 rounded-2xl border border-line bg-paper p-4 sm:gap-3.5 sm:p-5">
+              <InfoIcon size={20} className="mt-px shrink-0 text-clay-dark" />
+              <span className="text-sm leading-relaxed sm:text-[15px]">
+                <strong>If you decide not to go ahead,</strong> the £50 is kept, as it covers the sourcing work already done.
               </span>
             </div>
           </div>
-          <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-[0_18px_40px_rgba(60,30,10,0.1)] sm:p-8 lg:w-[480px] lg:shrink-0">
+          <div className="flex flex-col gap-3 rounded-2xl bg-white p-5 text-[15px] shadow-[0_18px_40px_rgba(60,30,10,0.1)] sm:gap-4 sm:rounded-3xl sm:p-8 sm:text-base lg:w-[460px] lg:shrink-0">
             <span className="text-sm font-bold text-subtle">Example order</span>
             <Row label="Products from China" value="£450.00" />
-            <Row label="Goody's service charge (10%)" value="£45.00" />
-            <div className="flex items-center justify-between border-b border-[#ece3d5] pb-3.5">
-              <span className="flex flex-col gap-0.5">
-                <span>Commitment fee refunded</span>
-                <span className="text-[13px] text-subtle">You paid this when you sent your list</span>
-              </span>
-              <span className="font-bold text-jade">£50.00 back</span>
-            </div>
-            <Row label="Shipping" value="Quoted for your items" muted />
+            <Row label="Service charge (10%)" value="£45.00" />
+            <Row label="Your £50 fee" value="Refunded" valueClass="font-bold text-jade" />
+            <Row label="Shipping" value="Quoted for your items" valueClass="text-muted" />
             <div className="flex items-baseline justify-between pt-1">
               <span className="font-bold">Our fee for this order</span>
-              <span className="font-display text-[34px] font-semibold">£45.00</span>
+              <span className="font-display text-[28px] font-semibold sm:text-[34px]">£45.00</span>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* What it covers */}
-      <section className="flex flex-col gap-9 pb-20 lg:pb-28">
-        <h2 className="font-display text-3xl font-medium tracking-[-0.015em] sm:text-[46px]">What the service covers</h2>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
-          {covers.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="flex flex-col gap-3.5 border-t-2 border-ink pt-5">
-              <Icon size={26} className="text-clay" />
-              <span className="text-[19px] font-bold">{title}</span>
-              <span className="text-[15px] leading-relaxed text-muted">{body}</span>
-            </div>
+      {/* What it covers: 2 x 2 on phones */}
+      <section className="flex flex-col gap-6 pb-14 lg:gap-9 lg:pb-28">
+        <Reveal>
+          <h2 className="font-display text-[28px] tracking-[-0.015em] sm:text-[46px]">What the service covers</h2>
+        </Reveal>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:gap-8 lg:grid-cols-4 lg:gap-5">
+          {covers.map(({ icon: Icon, title, body }, i) => (
+            <Reveal key={title} delay={i * 80} className="flex flex-col gap-2 border-t-2 border-ink pt-4 sm:gap-3.5 sm:pt-5">
+              <Icon size={22} className="text-clay" />
+              <span className="text-[15px] font-bold leading-snug sm:text-[19px]">{title}</span>
+              <span className="text-[13px] leading-relaxed text-muted sm:text-[15px]">{body}</span>
+            </Reveal>
           ))}
         </div>
-                <p className="text-[15px] leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted sm:text-[15px]">
           <strong className="text-ink">Not included in the £50:</strong> the cost of the products and shipping. Both are quoted
           for you before you decide to go ahead.
         </p>
       </section>
 
-      {/* Request form */}
-      <section className="pb-20 lg:pb-28">
-        <SourcingForm />
+      {/* Call to action */}
+      <section className="pb-14 lg:pb-28">
+        <Reveal className="flex flex-col items-start gap-5 rounded-[24px] bg-ink p-6 text-cream sm:rounded-[32px] sm:p-12 lg:flex-row lg:items-center lg:justify-between lg:p-16">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-display text-[28px] leading-tight sm:text-[40px]">Ready when you are.</h2>
+            <p className="text-[15px] text-[#d9cfc0] sm:text-base">It takes a few minutes. Add as many items as you like.</p>
+          </div>
+          <Link href="/sourcing/request" className="flex h-[54px] items-center gap-2 rounded-full bg-cream px-7 font-semibold text-ink">
+            Start your request <ArrowRightIcon size={18} />
+          </Link>
+        </Reveal>
       </section>
 
       {/* FAQ */}
-      <section className="flex flex-col gap-8 pb-24 lg:flex-row lg:gap-20">
-        <h2 className="font-display text-3xl font-medium tracking-[-0.015em] sm:text-[40px] lg:w-[360px] lg:shrink-0">Questions</h2>
+      <section className="flex flex-col gap-6 pb-24 lg:flex-row lg:gap-20">
+        <h2 className="font-display text-[28px] tracking-[-0.015em] sm:text-[40px] lg:w-[360px] lg:shrink-0">Questions</h2>
         <div className="flex flex-1 flex-col border-t border-line-strong">
-          {faqs.map(([q, a], i) => (
-            <details key={q} open={i === 0} className="border-b border-line-strong py-[22px]">
-              <summary className="cursor-pointer text-lg font-semibold">{q}</summary>
-              <p className="mt-3 text-base leading-relaxed text-muted">{a}</p>
+          {faqs.map(([q, a]) => (
+            <details key={q} className="border-b border-line-strong py-4 sm:py-[22px]">
+              <summary className="cursor-pointer text-base font-semibold sm:text-lg">{q}</summary>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted sm:text-base">{a}</p>
             </details>
           ))}
         </div>
       </section>
+
+      <StickyRequestButton watchId="hero-request-button" />
     </div>
   );
 }
 
-function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function Row({ label, value, valueClass = "font-semibold" }: { label: string; value: string; valueClass?: string }) {
   return (
-    <div className="flex justify-between border-b border-[#ece3d5] pb-3.5">
+    <div className="flex justify-between gap-4 border-b border-[#ece3d5] pb-3">
       <span>{label}</span>
-      <span className={muted ? "text-muted" : "font-semibold"}>{value}</span>
+      <span className={`text-right ${valueClass}`}>{value}</span>
     </div>
   );
 }

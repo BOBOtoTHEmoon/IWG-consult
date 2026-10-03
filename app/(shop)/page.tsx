@@ -213,7 +213,7 @@ export default async function HomePage() {
             </p>
             <div className="flex items-center gap-4 sm:gap-5">
               <Link
-                href="/sourcing#request"
+                href="/sourcing/request"
                 className="flex h-12 shrink-0 items-center rounded-full bg-cream px-5 text-[15px] font-semibold text-brown transition-transform active:scale-[0.98] sm:h-[52px] sm:px-[26px] sm:text-base"
               >
                 Start a sourcing request

@@ -41,7 +41,7 @@ const groups: { title: string; items: QA[] }[] = [
       { q: "How long does delivery from China take?", a: "Air freight usually takes around 7 working days or more, and sea freight up to 60 days. Goody recommends the best option for your items, timeline and budget." },
       { q: "Do you handle shipping and customs?", a: "Goody arranges the shipping and tracks your items to your door. Any import duties or taxes for your country are quoted or explained before you go ahead." },
       { q: "Can I see a sample before ordering?", a: "Yes, where it makes sense. Goody arranges samples for you to approve before the full order is made." },
-      { q: "Not sure exactly what you want?", a: <>Describe what it&apos;s for and your budget in your <Link href="/sourcing#request">sourcing request</Link>, and Goody can suggest options.</> },
+      { q: "Not sure exactly what you want?", a: <>Describe what it&apos;s for and your budget in your <Link href="/sourcing/request">sourcing request</Link>, and Goody can suggest options.</> },
     ],
   },
 ];

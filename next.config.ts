@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/services", destination: "/sourcing", permanent: true },
       { source: "/pricing", destination: "/sourcing#pricing", permanent: true },
-      { source: "/start-brief", destination: "/sourcing#request", permanent: true },
+      { source: "/start-brief", destination: "/sourcing/request", permanent: true },
     ];
   },
 };

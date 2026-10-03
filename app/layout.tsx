@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Figtree, Fredoka } from "next/font/google";
 import BasketDrawer from "@/components/shop/BasketDrawer";
 import BasketProvider from "@/components/shop/BasketProvider";
+import SiteAnalytics from "@/components/SiteAnalytics";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <BasketDrawer />
         </BasketProvider>
+         <SiteAnalytics />
       </body>
     </html>
   );

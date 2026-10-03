@@ -6,10 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { refreshShop } from "@/app/admin/actions";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
-import { slugify, type ShopProduct } from "@/lib/product-types";
+import { OPTION_LABELS, slugify, type ShopProduct } from "@/lib/product-types";
 import { createClient } from "@/lib/supabase/client";
-import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, TrashIcon } from "../Icons";
 import { uniqueId } from "@/lib/unique-id";
+import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, PlusIcon, TrashIcon } from "../Icons";
+
+// One row in the options editor. Stock is kept as text while typing.
+type OptionRow = { key: string; name: string; hex: string; stock: string };
 
 // A photo already saved in storage has a path. A new one has a file waiting to upload.
 type Photo = { key: string; url: string; path?: string; file?: File };
@@ -30,6 +33,13 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
   const [description, setDescription] = useState(product?.description ?? "");
   const [tag, setTag] = useState(product?.tag ?? "");
   const [live, setLive] = useState(product ? product.status === "live" : true);
+  const [hasOptions, setHasOptions] = useState((product?.options.length ?? 0) > 0);
+  const [optionLabel, setOptionLabel] = useState(product?.optionLabel ?? "Colour");
+  const [optionRows, setOptionRows] = useState<OptionRow[]>(
+    product?.options.length
+      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock) }))
+      : [{ key: "first", name: "", hex: "#3b3733", stock: "" }]
+  );
   const [photos, setPhotos] = useState<Photo[]>(
     product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
@@ -65,6 +75,13 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
     });
   }
 
+  const isColour = optionLabel === "Colour";
+  const optionTotal = optionRows.reduce((n, r) => n + Math.max(0, Math.floor(Number(r.stock) || 0)), 0);
+  const updateRow = (key: string, changes: Partial<OptionRow>) =>
+    setOptionRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...changes } : r)));
+  const addRow = () => setOptionRows((rows) => [...rows, { key: uniqueId(), name: "", hex: "#3b3733", stock: "" }]);
+  const removeRow = (key: string) => setOptionRows((rows) => (rows.length > 1 ? rows.filter((r) => r.key !== key) : rows));
+
   // Find a free URL name: "rattan-basket", then "rattan-basket-2", and so on.
   async function uniqueSlug(base: string) {
     const supabase = createClient();
@@ -81,6 +98,21 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
     if (!name.trim()) return setError("Add a product name.");
     if (!(Number(price) > 0)) return setError("Add a price greater than £0.");
     if (status === "live" && photos.length === 0) return setError("Add at least one photo before it goes live.");
+
+    const cleanOptions = hasOptions
+      ? optionRows
+          .filter((r) => r.name.trim())
+          .map((r) => ({
+            name: r.name.trim(),
+            ...(isColour ? { hex: r.hex } : {}),
+            stock: Math.max(0, Math.floor(Number(r.stock) || 0)),
+          }))
+      : [];
+    if (hasOptions) {
+      if (cleanOptions.length < 2) return setError(`Add at least two ${optionLabel.toLowerCase()} options, or switch options off.`);
+      const names = cleanOptions.map((o) => o.name.toLowerCase());
+      if (new Set(names).size !== names.length) return setError("Two options have the same name. Give each one a different name.");
+    }
     setError("");
     setBusy("saving");
 
@@ -96,7 +128,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           continue;
         }
         const blob = await compressImage(photo.file!);
-               const path = `${slug}/${uniqueId()}.jpg`;
+        const path = `${slug}/${uniqueId()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from(BUCKET)
           .upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
@@ -108,7 +140,10 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
       const row = {
         name: name.trim(),
         price: Number(Number(price).toFixed(2)),
-        stock: Math.max(0, Math.floor(Number(stock) || 0)),
+        // With options, the product's stock is the total of all its options.
+        stock: hasOptions ? cleanOptions.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
+        options: cleanOptions,
+        option_label: optionLabel,
         category,
         weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
         description: description.trim(),
@@ -147,7 +182,9 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
       setNotice(status === "live" ? "Saved. It's live in the shop." : "Saved. It's hidden from the shop.");
       router.refresh();
     } catch (e) {
-      setError((e as Error).message);
+      console.error("Product save failed:", e);
+      const message = (e as Error).message;
+      setError(message.startsWith("We couldn't") || message.startsWith("A photo") ? message : "Something went wrong while saving. Please try again.");
     } finally {
       setBusy("");
     }
@@ -197,7 +234,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           e.preventDefault();
           save(editing ? (live ? "live" : "draft") : "live");
         }}
-                className="flex flex-col gap-[18px] px-4 pb-24 pt-5 lg:pb-10"
+        className="flex flex-col gap-[18px] px-4 pb-24 pt-5 lg:pb-10"
       >
         <div className="flex flex-col gap-2.5">
           <span className="text-sm font-semibold">
@@ -256,10 +293,19 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
             Price (£)
             <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="0.00" className={input} />
           </label>
-          <label className={label}>
-            In stock
-            <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} placeholder="0" className={input} />
-          </label>
+          {hasOptions ? (
+            <div className={label}>
+              In stock
+              <span className="flex h-[52px] items-center rounded-xl border-[1.5px] border-dashed border-line-strong bg-paper px-3.5 text-base font-normal text-muted">
+                {optionTotal} in total
+              </span>
+            </div>
+          ) : (
+            <label className={label}>
+              In stock
+              <input value={stock} onChange={(e) => setStock(e.target.value)} type="number" min={0} placeholder="0" className={input} />
+            </label>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -288,6 +334,101 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
             className="resize-none rounded-xl border-[1.5px] border-line-strong bg-white px-3.5 py-3 text-base font-normal leading-normal"
           />
         </label>
+
+        <section className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-4">
+          <label className="flex items-center justify-between gap-4">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-[15px] font-semibold">This product comes in different options</span>
+              <span className="text-[13px] text-subtle">For example colours, sizes or lengths, each with its own stock.</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={hasOptions}
+              onChange={(e) => setHasOptions(e.target.checked)}
+              className="h-[22px] w-[22px] shrink-0 accent-jade"
+            />
+          </label>
+
+          {hasOptions && (
+            <>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-semibold">Options are</span>
+                <div className="flex flex-wrap gap-2">
+                  {OPTION_LABELS.map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setOptionLabel(l)}
+                      aria-pressed={optionLabel === l}
+                      className={`h-10 rounded-full border-[1.5px] px-4 text-sm font-semibold ${
+                        optionLabel === l ? "border-ink bg-ink text-cream" : "border-line-strong text-ink"
+                      }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <ul className="flex flex-col gap-2.5">
+                {optionRows.map((r, i) => (
+                  <li key={r.key} className="flex items-end gap-2">
+                    {isColour && (
+                      <label className="flex flex-col gap-1.5 text-xs font-semibold text-subtle">
+                        <span className="sr-only">Swatch for option {i + 1}</span>
+                        <span aria-hidden="true">Swatch</span>
+                        <input
+                          type="color"
+                          value={r.hex}
+                          onChange={(e) => updateRow(r.key, { hex: e.target.value })}
+                          className="h-12 w-12 cursor-pointer rounded-xl border-[1.5px] border-line-strong bg-white p-1"
+                        />
+                      </label>
+                    )}
+                    <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs font-semibold text-subtle">
+                      {optionLabel} name
+                      <input
+                        value={r.name}
+                        onChange={(e) => updateRow(r.key, { name: e.target.value })}
+                        maxLength={30}
+                        placeholder={isColour ? (i === 0 ? "e.g. Black" : "e.g. Brown") : optionLabel === "Length" ? 'e.g. 22"' : optionLabel === "Size" ? "e.g. Medium" : "e.g. Curly"}
+                        className="h-12 w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                      />
+                    </label>
+                    <label className="flex w-[84px] flex-col gap-1.5 text-xs font-semibold text-subtle">
+                      Stock
+                      <input
+                        value={r.stock}
+                        onChange={(e) => updateRow(r.key, { stock: e.target.value })}
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        className="h-12 w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(r.key)}
+                      disabled={optionRows.length === 1}
+                      aria-label={`Remove option ${i + 1}`}
+                      className="flex h-12 w-10 shrink-0 items-center justify-center rounded-xl text-subtle hover:bg-sand disabled:opacity-30"
+                    >
+                      <CloseIcon size={18} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={addRow}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-clay text-sm font-bold text-clay"
+              >
+                <PlusIcon size={16} />
+                Add another {optionLabel.toLowerCase()}
+              </button>
+            </>
+          )}
+        </section>
 
         <label className={label}>
           <span>
@@ -334,7 +475,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
           </div>
         )}
 
-                {/* Floating save button: hovers above the tab bar on phones */}
+        {/* Floating save button: hovers above the tab bar on phones */}
         <div className="pointer-events-none sticky bottom-[100px] z-10 flex flex-col gap-2 lg:static">
           {error && (
             <p

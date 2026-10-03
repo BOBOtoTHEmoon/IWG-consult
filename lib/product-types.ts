@@ -2,6 +2,15 @@
 
 export type ProductStatus = "draft" | "live";
 
+// One choice of a product, e.g. the black version of a wig. Each has its own stock.
+export type ProductOption = { name: string; hex?: string; stock: number };
+
+export const OPTION_LABELS = ["Colour", "Size", "Length", "Style"] as const;
+
+// "Colour" -> "colours", "Length" -> "lengths"
+export const optionPlural = (label: string, count: number) =>
+  `${count} ${label.toLowerCase()}${count === 1 ? "" : "s"}`;
+
 export type ShopProduct = {
   id: string;
   slug: string;
@@ -14,7 +23,8 @@ export type ShopProduct = {
   status: ProductStatus;
   tag: string | null;
   tint: string;
-  colours: { name: string; hex: string }[];
+  optionLabel: string; // "Colour", "Size", "Length" or "Style"
+  options: ProductOption[]; // empty when the product has no options
   imagePaths: string[]; // paths inside the product-images bucket
   images: string[]; // public URLs for those paths
   createdAt: string;
@@ -33,13 +43,14 @@ export type ProductRow = {
   status: ProductStatus;
   tag: string | null;
   tint: string;
-  colours: { name: string; hex: string }[] | null;
+  option_label: string | null;
+  options: { name: string; hex?: string; stock?: number }[] | null;
   images: string[] | null;
   created_at: string;
 };
 
 export const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, colours, images, created_at";
+  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, options, images, created_at";
 
 export const productImageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
@@ -58,7 +69,9 @@ export function toProduct(row: ProductRow): ShopProduct {
     status: row.status,
     tag: row.tag,
     tint: row.tint,
-    colours: row.colours ?? [],
+    optionLabel: row.option_label || "Colour",
+    // Older rows may have options without stock; treat those as sharing the product's stock.
+    options: (row.options ?? []).map((o) => ({ name: o.name, hex: o.hex, stock: o.stock ?? row.stock })),
     imagePaths,
     images: imagePaths.map(productImageUrl),
     createdAt: row.created_at,

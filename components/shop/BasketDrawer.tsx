@@ -81,7 +81,11 @@ export default function BasketDrawer() {
                       </Link>
                       <span className="shrink-0 font-semibold">{gbp(item.price * item.qty)}</span>
                     </div>
-                    {item.colour && <span className="text-[13px] text-subtle">{item.colour}</span>}
+                    {item.variant && (
+  <span className="text-[13px] text-subtle">
+    {item.variantLabel ?? "Option"}: {item.variant}
+  </span>
+)}
                     <div className="mt-auto flex items-center justify-between pt-2">
                       <QuantityStepper
                         size="sm"

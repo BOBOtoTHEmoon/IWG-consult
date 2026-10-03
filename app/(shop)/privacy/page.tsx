@@ -83,12 +83,12 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>Cookies</h2>
-      <p>
+            <p>
         We only use cookies and similar storage that the website needs to work, such as remembering your basket.
-        These don&apos;t track you. If we add analytics or marketing cookies in future, we will ask for your
-        permission first and update this policy.
+        We also use Vercel Analytics to count visits and see which pages are popular. It doesn&apos;t use cookies,
+        doesn&apos;t identify you, and doesn&apos;t track you across other websites.
       </p>
-
+      
       <h2>Your rights</h2>
       <p>Under UK data protection law you can ask us to:</p>
       <ul>

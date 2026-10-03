@@ -37,38 +37,43 @@ export default function CheckoutView() {
       const ids = [...new Set(items.map((i) => i.productId))];
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, stock, images")
+        .select("id, name, price, stock, images, options")
         .eq("status", "live")
         .in("id", ids);
       if (error || !data) return;
 
       const live = new Map(data.map((p) => [p.id, p]));
       const notes: string[] = [];
-      const usedStock = new Map<string, number>();
       const next: BasketItem[] = [];
 
       for (const item of items) {
         const p = live.get(item.productId);
-        if (!p || p.stock === 0) {
-          notes.push(`${item.name} is no longer available and was removed.`);
+        const label = item.variant ? `${item.name} (${item.variant})` : item.name;
+        if (!p) {
+          notes.push(`${label} is no longer available and was removed.`);
           continue;
         }
-        // Share stock across colours of the same product.
-        const left = p.stock - (usedStock.get(item.productId) ?? 0);
-        const qty = Math.min(item.qty, left);
-        if (qty <= 0) {
-          notes.push(`${item.name} (${item.colour}) is sold out and was removed.`);
+        // Stock for this option if it has one, otherwise for the product.
+        const options = (p.options ?? []) as { name: string; stock?: number }[];
+        const option = item.variant ? options.find((o) => o.name === item.variant) : undefined;
+        if (item.variant && !option) {
+          notes.push(`${label} is no longer available and was removed.`);
           continue;
         }
-        if (qty < item.qty) notes.push(`Only ${p.stock} ${item.name} left, so we've updated your quantity.`);
+        const stock = option ? (option.stock ?? p.stock) : p.stock;
+        if (stock <= 0) {
+          notes.push(`${label} is sold out and was removed.`);
+          continue;
+        }
+        const qty = Math.min(item.qty, stock);
+        if (qty < item.qty) notes.push(`Only ${stock} of ${label} left, so we've updated your quantity.`);
         const price = Number(p.price);
         if (price !== item.price) notes.push(`The price of ${item.name} has changed to ${gbp(price)}.`);
-        usedStock.set(item.productId, (usedStock.get(item.productId) ?? 0) + qty);
         next.push({
           ...item,
           qty,
           price,
-          stock: p.stock,
+          stock,
           name: p.name,
           image: p.images?.[0] ? productImageUrl(p.images[0]) : item.image,
         });
@@ -220,7 +225,11 @@ export default function CheckoutView() {
                   <span className="text-[15px] font-semibold">{item.name}</span>
                   <span className="shrink-0 text-[15px] font-semibold">{gbp(item.price * item.qty)}</span>
                 </div>
-                {item.colour && <span className="text-[13px] text-subtle">{item.colour}</span>}
+               {item.variant && (
+  <span className="text-[13px] text-subtle">
+    {item.variantLabel ?? "Option"}: {item.variant}
+  </span>
+)}
                 <div className="mt-1 flex items-center justify-between">
                   <QuantityStepper
                     size="sm"

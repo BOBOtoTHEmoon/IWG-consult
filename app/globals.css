@@ -160,3 +160,51 @@ body {
     transition: none;
   }
 }
+/* ---------- Brand loader ---------- */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes ripple {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes loader-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.loader-wrap {
+  animation: loader-in 0.3s ease-out 0.15s both;
+}
+.loader-mark {
+  animation: breathe 1.6s ease-in-out infinite;
+}
+.loader-ring {
+  animation: ripple 1.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-mark,
+  .loader-ring {
+    animation: none;
+  }
+  .loader-ring {
+    opacity: 0;
+  }
+}
