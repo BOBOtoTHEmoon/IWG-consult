@@ -1,6 +1,9 @@
 import Link from "next/link";
 import InfoPage from "@/components/shop/InfoPage";
 import { site } from "@/lib/site";
+import DeliveryRates from "@/components/shop/DeliveryRates";
+// Refresh at least every minute. Saving delivery settings in the admin refreshes it straight away.
+export const revalidate = 60;
 
 export const metadata = {
   title: "Delivery | Import with Goody",
@@ -17,35 +20,7 @@ export default function DeliveryPage() {
     >
       <h2>Rates and times</h2>
       <p>Delivery is worked out at checkout from your address and the weight of your order.</p>
-      <div className="overflow-x-auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Service</th>
-              <th>Usually arrives</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>UK Standard, Royal Mail</td>
-              <td>[X to Y] working days</td>
-              <td>£[rate]</td>
-            </tr>
-            <tr>
-              <td>UK Tracked, Royal Mail</td>
-              <td>[X to Y] working days</td>
-              <td>£[rate]</td>
-            </tr>
-            <tr>
-              <td>International, Royal Mail</td>
-              <td>[X to Y] working days, depending on the country</td>
-              <td>By destination, shown at checkout</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p>[Optional: Free UK Standard delivery on orders over £X.]</p>
+            <DeliveryRates />
 
       <h2>When your order is posted</h2>
       <p>

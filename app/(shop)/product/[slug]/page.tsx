@@ -106,9 +106,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 {categoryName(product.category)}
               </span>
               <h1 className="font-display text-[34px] leading-[1.08] tracking-[-0.015em] sm:text-[46px]">{product.name}</h1>
-              <div className="flex items-center gap-4">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <span className="text-[28px] font-semibold">{gbp(product.price)}</span>
                 <StockLabel stock={product.stock} />
+                {product.freeShipping && (
+                  <span className="flex h-7 items-center rounded-full bg-jade-soft px-3 text-[13px] font-semibold text-jade">Free delivery</span>
+                )}
               </div>
             </div>
             {product.description && (

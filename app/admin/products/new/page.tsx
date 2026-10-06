@@ -1,5 +1,9 @@
 import ProductForm from "@/components/admin/ProductForm";
+import { getShippingSetup } from "@/lib/shipping";
 
-export default function NewProductPage() {
-  return <ProductForm />;
+export const dynamic = "force-dynamic";
+
+export default async function NewProductPage() {
+  const shipping = await getShippingSetup();
+  return <ProductForm shipping={shipping} />;
 }

@@ -25,6 +25,8 @@ export type ShopProduct = {
   tint: string;
   optionLabel: string; // "Colour", "Size", "Length" or "Style"
   options: ProductOption[]; // empty when the product has no options
+    freeShipping: boolean;
+  shippingMethodIds: string[]; // empty = every delivery option
   imagePaths: string[]; // paths inside the product-images bucket
   images: string[]; // public URLs for those paths
   createdAt: string;
@@ -45,13 +47,14 @@ export type ProductRow = {
   tint: string;
   option_label: string | null;
   options: { name: string; hex?: string; stock?: number }[] | null;
+    free_shipping: boolean | null;
+  shipping_method_ids: string[] | null;
   images: string[] | null;
   created_at: string;
 };
 
 export const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, options, images, created_at";
-
+  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, options, free_shipping, shipping_method_ids, images, created_at";
 export const productImageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
 
@@ -72,6 +75,8 @@ export function toProduct(row: ProductRow): ShopProduct {
     optionLabel: row.option_label || "Colour",
     // Older rows may have options without stock; treat those as sharing the product's stock.
     options: (row.options ?? []).map((o) => ({ name: o.name, hex: o.hex, stock: o.stock ?? row.stock })),
+        freeShipping: row.free_shipping ?? false,
+    shippingMethodIds: row.shipping_method_ids ?? [],
     imagePaths,
     images: imagePaths.map(productImageUrl),
     createdAt: row.created_at,

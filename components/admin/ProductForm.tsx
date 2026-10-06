@@ -7,6 +7,7 @@ import { refreshShop } from "@/app/admin/actions";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
 import { OPTION_LABELS, slugify, type ShopProduct } from "@/lib/product-types";
+import type { ShippingMethod, ShippingZone } from "@/lib/shipping-types";
 import { createClient } from "@/lib/supabase/client";
 import { uniqueId } from "@/lib/unique-id";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, PlusIcon, TrashIcon } from "../Icons";
@@ -21,7 +22,13 @@ const BUCKET = "product-images";
 const input = "h-[52px] w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3.5 text-base font-normal";
 const label = "flex flex-col gap-2 text-sm font-semibold";
 
-export default function ProductForm({ product }: { product?: ShopProduct }) {
+export default function ProductForm({
+  product,
+  shipping = { zones: [], methods: [] },
+}: {
+  product?: ShopProduct;
+  shipping?: { zones: ShippingZone[]; methods: ShippingMethod[] };
+}) {
   const router = useRouter();
   const editing = Boolean(product);
 
@@ -40,6 +47,9 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
       ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock) }))
       : [{ key: "first", name: "", hex: "#3b3733", stock: "" }]
   );
+    const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
+  const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
+  const [methodIds, setMethodIds] = useState<string[]>(product?.shippingMethodIds ?? []);
   const [photos, setPhotos] = useState<Photo[]>(
     product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
@@ -113,6 +123,9 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
       const names = cleanOptions.map((o) => o.name.toLowerCase());
       if (new Set(names).size !== names.length) return setError("Two options have the same name. Give each one a different name.");
     }
+        // Only keep options that still exist.
+    const chosenMethods = methodIds.filter((id) => shipping.methods.some((m) => m.id === id));
+    if (limitMethods && chosenMethods.length === 0) return setError("Choose at least one delivery option, or allow all of them.");
     setError("");
     setBusy("saving");
 
@@ -144,6 +157,8 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
         stock: hasOptions ? cleanOptions.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
         options: cleanOptions,
         option_label: optionLabel,
+                free_shipping: freeShipping,
+        shipping_method_ids: limitMethods ? chosenMethods : [],
         category,
         weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
         description: description.trim(),
@@ -322,7 +337,7 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
             <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" min={0} placeholder="e.g. 850" className={input} />
           </label>
         </div>
-        <span className="-mt-2 text-[13px] text-subtle">Weight sets the Royal Mail delivery band at checkout.</span>
+                <span className="-mt-2 text-[13px] text-subtle">Weight is used for delivery options priced by weight.</span>
 
         <label className={label}>
           Description
@@ -428,6 +443,76 @@ export default function ProductForm({ product }: { product?: ShopProduct }) {
               </button>
             </>
           )}
+        </section>
+
+                <section className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">Delivery</span>
+            <span className="text-[13px] text-subtle">
+              Prices for each option are set on the <Link href="/admin/delivery" className="font-semibold text-clay underline">Delivery</Link> page.
+            </span>
+          </div>
+
+          <label className="flex items-center justify-between gap-4 rounded-xl border border-line bg-paper p-3.5">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-[15px] font-semibold">Free delivery on this product</span>
+              <span className="text-[13px] text-subtle">It won&apos;t add to the delivery cost at checkout</span>
+            </span>
+            <input type="checkbox" checked={freeShipping} onChange={(e) => setFreeShipping(e.target.checked)} className="h-[22px] w-[22px] shrink-0 accent-jade" />
+          </label>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-semibold">Which delivery options can it use?</span>
+            <div className="grid grid-cols-2 gap-2">
+              {[false, true].map((limited) => (
+                <button
+                  key={String(limited)}
+                  type="button"
+                  onClick={() => setLimitMethods(limited)}
+                  aria-pressed={limitMethods === limited}
+                  className={`rounded-xl border-[1.5px] px-3.5 py-3 text-left text-[15px] font-semibold ${
+                    limitMethods === limited ? "border-ink bg-paper" : "border-line-strong"
+                  }`}
+                >
+                  {limited ? "Only the ones I choose" : "All of them"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {limitMethods &&
+            (shipping.methods.length === 0 ? (
+              <p className="rounded-xl bg-[#f1e6c8] px-3.5 py-3 text-sm text-[#6e5316]">
+                There are no delivery options yet. Add them on the <Link href="/admin/delivery" className="font-semibold underline">Delivery</Link> page first.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {shipping.zones.map((z) => {
+                  const zoneMethods = shipping.methods.filter((m) => m.zoneId === z.id);
+                  if (zoneMethods.length === 0) return null;
+                  return (
+                    <fieldset key={z.id} className="flex flex-col gap-1">
+                      <legend className="mb-1 text-[13px] font-bold uppercase tracking-[0.08em] text-subtle">{z.name}</legend>
+                      {zoneMethods.map((m) => (
+                        <label key={m.id} className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px]">
+                          <input
+                            type="checkbox"
+                            checked={methodIds.includes(m.id)}
+                            onChange={(e) =>
+                              setMethodIds((ids) => (e.target.checked ? [...ids, m.id] : ids.filter((x) => x !== m.id)))
+                            }
+                            className="h-5 w-5 accent-clay"
+                          />
+                          {m.name}
+                          {!m.active && <span className="text-xs text-subtle">(switched off)</span>}
+                        </label>
+                      ))}
+                    </fieldset>
+                  );
+                })}
+                <p className="text-[13px] text-subtle">Customers in a zone with none of these ticked won&apos;t be able to buy this product.</p>
+              </div>
+            ))}
         </section>
 
         <label className={label}>

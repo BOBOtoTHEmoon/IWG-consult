@@ -208,3 +208,11 @@ body {
     opacity: 0;
   }
 }
+/* Smaller sub-headings inside policy pages (e.g. delivery zones) */
+.prose-page h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}

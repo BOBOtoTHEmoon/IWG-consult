@@ -1,11 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { COUNTRIES, countryName } from "@/lib/countries";
 import { gbp } from "@/lib/data";
-import { createClient } from "@/lib/supabase/client";
 import { productImageUrl } from "@/lib/product-types";
-import { BagIcon, TruckIcon } from "../Icons";
+import {
+  METHOD_COLUMNS,
+  ZONE_COLUMNS,
+  deliveryTime,
+  quoteDelivery,
+  toMethod,
+  toZone,
+  zoneForCountry,
+  type ShippingMethod,
+  type ShippingZone,
+} from "@/lib/shipping-types";
+import { createClient } from "@/lib/supabase/client";
+import { BagIcon, InfoIcon, TruckIcon } from "../Icons";
 import ProductImage from "../ProductImage";
 import { useBasket, type BasketItem } from "./BasketProvider";
 import QuantityStepper from "./QuantityStepper";
@@ -14,19 +26,21 @@ const input = "h-[52px] rounded-xl border-[1.5px] border-line-strong bg-white px
 const label = "flex flex-col gap-2 text-sm font-semibold";
 const card = "flex flex-col gap-4 rounded-[20px] border border-line bg-paper p-5 sm:p-7";
 
-// TODO (delivery rates step): load these from the admin's delivery settings.
-const methods = [
-  { id: "uk-standard", title: "UK Standard, Royal Mail", note: "[X to Y] working days" },
-  { id: "uk-tracked", title: "UK Tracked, Royal Mail", note: "Tracking number sent by email once posted" },
-  { id: "intl", title: "International, Royal Mail", note: "Shown when the delivery country is outside the UK", disabled: true },
-];
+// Delivery details for each product, loaded fresh at checkout.
+type ProductDelivery = { weightGrams: number | null; freeShipping: boolean; allowedMethodIds: string[] };
 
 export default function CheckoutView() {
   const { items, subtotal, ready, setQty, remove, replace } = useBasket();
   const [checked, setChecked] = useState(false);
   const [changes, setChanges] = useState<string[]>([]);
+  const [country, setCountry] = useState("GB");
+  const [zones, setZones] = useState<ShippingZone[]>([]);
+  const [methods, setMethods] = useState<ShippingMethod[]>([]);
+  const [productDelivery, setProductDelivery] = useState<Map<string, ProductDelivery>>(new Map());
+  const [deliveryLoaded, setDeliveryLoaded] = useState(false);
+  const [methodId, setMethodId] = useState("");
 
-  // Check the basket against live stock and prices once it has loaded.
+  // Check the basket against live stock and prices, and load the delivery settings.
   useEffect(() => {
     if (!ready || checked) return;
     setChecked(true);
@@ -35,12 +49,31 @@ export default function CheckoutView() {
     (async () => {
       const supabase = createClient();
       const ids = [...new Set(items.map((i) => i.productId))];
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name, price, stock, images, options")
-        .eq("status", "live")
-        .in("id", ids);
-      if (error || !data) return;
+      const [productsRes, zonesRes, methodsRes] = await Promise.all([
+        supabase
+          .from("products")
+          .select("id, name, price, stock, images, options, weight_grams, free_shipping, shipping_method_ids")
+          .eq("status", "live")
+          .in("id", ids),
+        supabase.from("shipping_zones").select(ZONE_COLUMNS).order("sort_order"),
+        supabase.from("shipping_methods").select(METHOD_COLUMNS).eq("active", true).order("sort_order"),
+      ]);
+
+      setZones((zonesRes.data ?? []).map(toZone));
+      setMethods((methodsRes.data ?? []).map(toMethod));
+      setDeliveryLoaded(true);
+
+      const data = productsRes.data;
+      if (productsRes.error || !data) return;
+
+      setProductDelivery(
+        new Map(
+          data.map((p) => [
+            p.id,
+            { weightGrams: p.weight_grams, freeShipping: p.free_shipping ?? false, allowedMethodIds: p.shipping_method_ids ?? [] },
+          ])
+        )
+      );
 
       const live = new Map(data.map((p) => [p.id, p]));
       const notes: string[] = [];
@@ -48,25 +81,25 @@ export default function CheckoutView() {
 
       for (const item of items) {
         const p = live.get(item.productId);
-        const label = item.variant ? `${item.name} (${item.variant})` : item.name;
+        const name = item.variant ? `${item.name} (${item.variant})` : item.name;
         if (!p) {
-          notes.push(`${label} is no longer available and was removed.`);
+          notes.push(`${name} is no longer available and was removed.`);
           continue;
         }
         // Stock for this option if it has one, otherwise for the product.
         const options = (p.options ?? []) as { name: string; stock?: number }[];
         const option = item.variant ? options.find((o) => o.name === item.variant) : undefined;
         if (item.variant && !option) {
-          notes.push(`${label} is no longer available and was removed.`);
+          notes.push(`${name} is no longer available and was removed.`);
           continue;
         }
         const stock = option ? (option.stock ?? p.stock) : p.stock;
         if (stock <= 0) {
-          notes.push(`${label} is sold out and was removed.`);
+          notes.push(`${name} is sold out and was removed.`);
           continue;
         }
         const qty = Math.min(item.qty, stock);
-        if (qty < item.qty) notes.push(`Only ${stock} of ${label} left, so we've updated your quantity.`);
+        if (qty < item.qty) notes.push(`Only ${stock} of ${name} left, so we've updated your quantity.`);
         const price = Number(p.price);
         if (price !== item.price) notes.push(`The price of ${item.name} has changed to ${gbp(price)}.`);
         next.push({
@@ -85,6 +118,46 @@ export default function CheckoutView() {
       }
     })();
   }, [ready, checked, items, replace]);
+
+  // Delivery options for the chosen country and what's in the basket.
+  const zone = useMemo(() => zoneForCountry(zones, country), [zones, country]);
+  const quotes = useMemo(() => {
+    if (!zone) return [];
+    return quoteDelivery(
+      methods.filter((m) => m.zoneId === zone.id),
+      items.map((i) => {
+        const d = productDelivery.get(i.productId);
+        return {
+          quantity: i.qty,
+          unitPrice: i.price,
+          weightGrams: d?.weightGrams ?? null,
+          freeShipping: d?.freeShipping ?? false,
+          allowedMethodIds: d?.allowedMethodIds ?? [],
+        };
+      })
+    );
+  }, [zone, methods, items, productDelivery]);
+
+  const available = quotes.filter((q) => q.available);
+  const selected = available.find((q) => q.method.id === methodId) ?? available[0];
+
+  // Keep the chosen option valid when the country or basket changes.
+  useEffect(() => {
+    if (selected && selected.method.id !== methodId) setMethodId(selected.method.id);
+  }, [selected, methodId]);
+
+  const deliveryPrice = selected?.price ?? 0;
+  const total = subtotal + deliveryPrice;
+
+  // Products that block every option in this zone, so we can say which one to remove.
+  const blockers = useMemo(() => {
+    if (!zone || available.length > 0) return [];
+    const zoneMethodIds = methods.filter((m) => m.zoneId === zone.id).map((m) => m.id);
+    return items.filter((i) => {
+      const allowed = productDelivery.get(i.productId)?.allowedMethodIds ?? [];
+      return allowed.length > 0 && !allowed.some((id) => zoneMethodIds.includes(id));
+    });
+  }, [zone, available.length, methods, items, productDelivery]);
 
   if (!ready) {
     return <div className="mx-auto max-w-[1440px] px-5 py-20 text-center text-muted">Loading your basket...</div>;
@@ -136,12 +209,10 @@ export default function CheckoutView() {
           <h2 className="text-xl font-bold">Delivery address</h2>
           <label className={label}>
             Country
-            <select name="country" autoComplete="country-name" className={input}>
-              <option>United Kingdom</option>
-              <option>Ireland</option>
-              <option>Nigeria</option>
-              <option>United States</option>
-              <option>Other country</option>
+            <select name="country" autoComplete="country" value={country} onChange={(e) => setCountry(e.target.value)} className={input}>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
             </select>
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -155,37 +226,72 @@ export default function CheckoutView() {
           </label>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className={label}>Town or city<input name="city" required autoComplete="address-level2" className={input} /></label>
-            <label className={label}>Postcode<input name="postcode" required autoComplete="postal-code" className={input} /></label>
+            <label className={label}>Postcode<input name="postcode" required={country === "GB"} autoComplete="postal-code" className={input} /></label>
             <label className={label}>Phone<input name="phone" type="tel" autoComplete="tel" className={input} /></label>
           </div>
         </section>
 
-                <section className={card} role="radiogroup" aria-labelledby="delivery-method-heading">
+        <section className={card} role="radiogroup" aria-labelledby="delivery-method-heading">
           <h2 id="delivery-method-heading" className="text-xl font-bold">Delivery method</h2>
-          {methods.map((m, i) => (
-            <label
-              key={m.id}
-              className={`flex cursor-pointer items-start gap-3.5 rounded-[14px] border-[1.5px] border-line-strong bg-white px-4 py-4 has-[:checked]:border-2 has-[:checked]:border-ink sm:items-center sm:px-[18px] ${
-                m.disabled ? "cursor-not-allowed opacity-60" : ""
-              }`}
-            >
-              <input
-                type="radio"
-                name="shipping"
-                value={m.id}
-                defaultChecked={i === 0}
-                disabled={m.disabled}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-clay sm:mt-0"
-              />
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-base font-semibold">{m.title}</span>
-                  <span className="text-sm text-muted">{m.note}</span>
+
+          {!deliveryLoaded ? (
+            <p className="text-[15px] text-muted">Loading delivery options...</p>
+          ) : !zone || quotes.length === 0 ? (
+            <Notice>
+              Sorry, we don&apos;t deliver to {countryName(country)} yet. <Link href="/contact" className="font-semibold underline">Get in touch</Link> and
+              we&apos;ll see what we can do.
+            </Notice>
+          ) : available.length === 0 ? (
+            <Notice>
+              {blockers.length > 0 ? (
+                <>
+                  {blockers.map((b) => b.name).join(", ")} can&apos;t be delivered to {countryName(country)}. Remove{" "}
+                  {blockers.length === 1 ? "it" : "them"} from your basket to continue.
+                </>
+              ) : (
+                <>
+                  None of our delivery options suit this order for {countryName(country)}. It may be too heavy.{" "}
+                  <Link href="/contact" className="font-semibold underline">Get in touch</Link> and we&apos;ll sort it out.
+                </>
+              )}
+            </Notice>
+          ) : (
+            quotes.map((q) => (
+              <label
+                key={q.method.id}
+                className={`flex items-start gap-3.5 rounded-[14px] border-[1.5px] border-line-strong bg-white px-4 py-4 has-[:checked]:border-2 has-[:checked]:border-ink sm:items-center sm:px-[18px] ${
+                  q.available ? "cursor-pointer" : "cursor-not-allowed opacity-55"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="shipping"
+                  value={q.method.id}
+                  checked={selected?.method.id === q.method.id}
+                  disabled={!q.available}
+                  onChange={() => setMethodId(q.method.id)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-clay sm:mt-0"
+                />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-base font-semibold">{q.method.name}</span>
+                    <span className="text-sm text-muted">
+                      {q.available
+                        ? [deliveryTime(q.method), q.freeBecause === "threshold" ? `Free on orders over ${gbp(q.method.freeOver!)}` : ""]
+                            .filter(Boolean)
+                            .join(". ") || "\u00a0"
+                        : q.reason}
+                    </span>
+                  </span>
+                  {q.available && (
+                    <span className={`mt-1 text-base font-semibold sm:mt-0 sm:shrink-0 ${q.price === 0 ? "text-jade" : ""}`}>
+                      {q.price === 0 ? "Free" : gbp(q.price)}
+                    </span>
+                  )}
                 </span>
-                <span className="mt-1 text-sm font-semibold text-subtle sm:mt-0 sm:shrink-0">Rate coming soon</span>
-              </span>
-            </label>
-          ))}
+              </label>
+            ))
+          )}
         </section>
 
         <section className={card}>
@@ -193,7 +299,7 @@ export default function CheckoutView() {
           <p className="text-[15px] leading-relaxed text-muted">
             You will finish paying securely with PayPal. Use your PayPal balance, or pay by debit or credit card without an account.
           </p>
-          {/* TODO (PayPal step): replace with PayPal buttons. The server re-checks stock and prices before taking payment. */}
+          {/* TODO (PayPal step): replace with PayPal buttons. The server re-checks stock, prices and delivery before taking payment. */}
           <button type="submit" disabled className="h-[58px] rounded-full bg-paypal text-[17px] font-bold text-ink opacity-60">
             Pay with PayPal (coming soon)
           </button>
@@ -225,11 +331,12 @@ export default function CheckoutView() {
                   <span className="text-[15px] font-semibold">{item.name}</span>
                   <span className="shrink-0 text-[15px] font-semibold">{gbp(item.price * item.qty)}</span>
                 </div>
-               {item.variant && (
-  <span className="text-[13px] text-subtle">
-    {item.variantLabel ?? "Option"}: {item.variant}
-  </span>
-)}
+                {item.variant && (
+                  <span className="text-[13px] text-subtle">
+                    {item.variantLabel ?? "Option"}: {item.variant}
+                  </span>
+                )}
+                {productDelivery.get(item.productId)?.freeShipping && <span className="text-[13px] font-semibold text-jade">Free delivery</span>}
                 <div className="mt-1 flex items-center justify-between">
                   <QuantityStepper
                     size="sm"
@@ -249,11 +356,16 @@ export default function CheckoutView() {
 
         <div className="flex flex-col gap-3 border-t border-[#ece3d5] pt-4 text-[15px]">
           <div className="flex justify-between"><span className="text-muted">Subtotal</span><span>{gbp(subtotal)}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Delivery</span><span className="text-subtle">Calculated next</span></div>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted">Delivery{selected ? `, ${selected.method.name}` : ""}</span>
+            <span className={`shrink-0 ${selected?.price === 0 ? "font-semibold text-jade" : ""}`}>
+              {selected ? (selected.price === 0 ? "Free" : gbp(selected.price)) : "Not available"}
+            </span>
+          </div>
         </div>
         <div className="flex items-baseline justify-between border-t border-[#ece3d5] pt-4">
-          <span className="text-[17px] font-bold">Total so far</span>
-          <span className="font-display text-3xl">{gbp(subtotal)}</span>
+          <span className="text-[17px] font-bold">Total</span>
+          <span className="font-display text-3xl">{gbp(total)}</span>
         </div>
         <div className="flex items-center gap-2.5 rounded-[14px] bg-cream px-4 py-3.5 text-sm text-muted">
           <TruckIcon size={18} className="shrink-0 text-jade" />
@@ -261,5 +373,14 @@ export default function CheckoutView() {
         </div>
       </aside>
     </form>
+  );
+}
+
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex items-start gap-3 rounded-[14px] bg-[#f1e6c8] px-4 py-3.5 text-[15px] leading-relaxed text-[#6e5316]">
+      <InfoIcon size={20} className="mt-0.5 shrink-0" />
+      <span>{children}</span>
+    </p>
   );
 }
