@@ -20,18 +20,18 @@ import Image from "next/image";
 const isActive = (pathname: string, href: string) =>
   href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
-const sidebarLinks = (toPack: number) => [
+const sidebarLinks = (toPack: number, newSourcing: number) => [
   { href: "/admin", label: "Overview", icon: GridIcon },
   { href: "/admin/orders", label: "Orders", icon: BagIcon, badge: toPack },
   { href: "/admin/products", label: "Products", icon: BoxIcon },
-  { href: "/admin/sourcing", label: "Sourcing requests", icon: ListIcon },
+    { href: "/admin/sourcing", label: "Sourcing requests", icon: ListIcon, badge: newSourcing },
   { href: "/admin/content", label: "Site content", icon: PenIcon },
   { href: "/admin/assistant", label: "AI assistant", icon: SparkleIcon },
   { href: "/admin/delivery", label: "Delivery rates", icon: TruckIcon },
   { href: "/admin/subscribers", label: "Email sign-ups", icon: MailIcon },
 ];
 
-export function AdminSidebar({ staffName, toPack }: { staffName: string; toPack: number }) {
+   export function AdminSidebar({ staffName, toPack, newSourcing }: { staffName: string; toPack: number; newSourcing: number }) {
   const pathname = usePathname();
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-7 bg-ink px-[18px] py-7 text-[#d9cfc0] lg:flex print:hidden">
@@ -47,7 +47,7 @@ export function AdminSidebar({ staffName, toPack }: { staffName: string; toPack:
         />
       </Link>
       <nav aria-label="Admin" className="flex flex-col gap-1 text-[15px]">
-        {sidebarLinks(toPack).map(({ href, label, icon: Icon, badge }) => {
+        {sidebarLinks(toPack, newSourcing).map(({ href, label, icon: Icon, badge }) => {
           const on = isActive(pathname, href);
           return (
             <Link
@@ -87,16 +87,16 @@ export function AdminSidebar({ staffName, toPack }: { staffName: string; toPack:
 
 const moreRoutes = ["/admin/more", "/admin/content", "/admin/subscribers", "/admin/assistant", "/admin/delivery"];
 
-const tabs = (toPack: number) => [
+const tabs = (toPack: number, newSourcing: number) => [
   { href: "/admin", label: "Home", icon: GridIcon },
   { href: "/admin/orders", label: "Orders", icon: BagIcon, badge: toPack },
   { href: "/admin/products", label: "Products", icon: BoxIcon },
-  { href: "/admin/sourcing", label: "Sourcing", icon: ListIcon },
+    { href: "/admin/sourcing", label: "Sourcing", icon: ListIcon, badge: newSourcing },
   { href: "/admin/more", label: "More", icon: DotsIcon },
 ];
 
 // Phones: floating glass tab bar (same pattern as InboxPilot, in Goody's colours).
-export function AdminTabBar({ toPack }: { toPack: number }) {
+   export function AdminTabBar({ toPack, newSourcing }: { toPack: number; newSourcing: number }) {
   const pathname = usePathname();
   return (
     <nav
@@ -104,7 +104,7 @@ export function AdminTabBar({ toPack }: { toPack: number }) {
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:hidden print:hidden"
     >
       <div className="pointer-events-auto grid w-full max-w-md grid-cols-5 gap-1 rounded-full border border-white/70 bg-white/60 p-1.5 shadow-[0_10px_40px_rgba(26,24,20,0.16),0_2px_6px_rgba(26,24,20,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl backdrop-saturate-[1.8]">
-        {tabs(toPack).map(({ href, label, icon: Icon, badge }) => {
+        {tabs(toPack, newSourcing).map(({ href, label, icon: Icon, badge }) => {
           const on =
             href === "/admin/more" ? moreRoutes.some((r) => pathname.startsWith(r)) : isActive(pathname, href);
           return (

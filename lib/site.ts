@@ -15,4 +15,5 @@ export const site = {
     linkedinLink: "", // e.g. https://www.linkedin.com/in/... (leave empty to hide)
   replyTime: "within 1 to 2 working days", // TODO
   policiesUpdated: "30 September 2026",
+    whatsappNumber: "447473011352", // Goody's WhatsApp, digits only, e.g. 447700900123
 };
