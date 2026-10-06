@@ -46,3 +46,9 @@ export async function getMonthSales(): Promise<{ total: number; count: number }>
   }
   return { total: data.reduce((s, r) => s + Number(r.total), 0), count: data.length };
 }
+export async function getOrderById(id: string): Promise<Order | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("orders").select(ORDER_COLUMNS).eq("id", id).maybeSingle();
+  if (error) console.error("getOrderById:", error.message);
+  return data ? toOrder(data as unknown as OrderRow) : null;
+}

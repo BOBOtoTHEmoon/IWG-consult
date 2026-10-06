@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { markShipped, resendConfirmation } from "@/app/admin/orders/actions";
 import { gbp } from "@/lib/data";
 import {
   STATUS_LABEL,
@@ -23,6 +24,7 @@ export default function OrderView({ order }: { order: Order }) {
   const router = useRouter();
   const [tracking, setTracking] = useState(order.trackingNumber ?? "");
   const [busy, setBusy] = useState(false);
+  const [notifyCustomer, setNotifyCustomer] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -38,12 +40,32 @@ export default function OrderView({ order }: { order: Order }) {
     const { error } = await supabase.from("orders").update(changes).eq("id", order.id);
     setBusy(false);
     if (error) return setError("We couldn't save that. Please try again.");
-    // TODO (emails): let the customer know when their order ships.
     setNotice(message);
     router.refresh();
   }
 
   const now = () => new Date().toISOString();
+
+  async function ship() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    const result = await markShipped(order.id, tracking, notifyCustomer);
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    setNotice(result.message);
+    router.refresh();
+  }
+
+  async function emailConfirmation() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    const result = await resendConfirmation(order.id);
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    setNotice(result.message);
+  }
 
   return (
     <main className="mx-auto flex max-w-[960px] flex-col gap-5 px-4 py-6 sm:px-8 lg:py-9">
@@ -132,7 +154,7 @@ export default function OrderView({ order }: { order: Order }) {
               ))}
             </address>
             <p className="text-sm text-muted">{order.email}{order.phone ? ` | ${order.phone}` : ""}</p>
-            <div className="flex gap-2.5 print:hidden">
+            <div className="flex flex-wrap gap-2.5 print:hidden">
               <a
                 href={`mailto:${order.email}?subject=Your order ${order.number}`}
                 className="flex h-11 flex-1 items-center justify-center gap-2 rounded-full border-[1.5px] border-line-strong bg-white text-sm font-semibold text-ink sm:flex-none sm:px-5"
@@ -140,6 +162,14 @@ export default function OrderView({ order }: { order: Order }) {
                 <MailIcon size={18} />
                 Email
               </a>
+              <button
+                type="button"
+                onClick={emailConfirmation}
+                disabled={busy}
+                className="flex h-11 flex-1 items-center justify-center rounded-full border-[1.5px] border-line-strong bg-white px-4 text-sm font-semibold text-ink disabled:opacity-60 sm:flex-none"
+              >
+                Resend confirmation
+              </button>
               {waLink && (
                 <a
                   href={waLink}
@@ -186,14 +216,18 @@ export default function OrderView({ order }: { order: Order }) {
                 />
                 <span className="font-normal text-[#a89d8e]">Leave empty if you sent it untracked.</span>
               </label>
+              <label className="flex items-center gap-2.5 text-sm text-[#d9cfc0]">
+                <input
+                  type="checkbox"
+                  checked={notifyCustomer}
+                  onChange={(e) => setNotifyCustomer(e.target.checked)}
+                  className="h-[18px] w-[18px] accent-clay"
+                />
+                Email the customer that it&apos;s on its way
+              </label>
               <button
                 disabled={busy}
-                onClick={() =>
-                  update(
-                    { status: "shipped", shipped_at: now(), tracking_number: tracking || null },
-                    tracking ? `Marked as shipped with tracking ${tracking}.` : "Marked as shipped."
-                  )
-                }
+                onClick={ship}
                 className="h-12 rounded-full bg-clay font-semibold text-white disabled:opacity-60"
               >
                 {busy ? "Saving..." : "Mark as shipped"}

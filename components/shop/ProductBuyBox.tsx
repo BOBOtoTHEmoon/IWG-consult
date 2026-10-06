@@ -6,6 +6,7 @@ import { useState } from "react";
 import { gbp } from "@/lib/data";
 import type { ShopProduct } from "@/lib/product-types";
 import { CheckIcon } from "../Icons";
+import { showProductPhoto } from "./ProductGallery";
 import { basketKey, useBasket } from "./BasketProvider";
 import QuantityStepper from "./QuantityStepper";
 
@@ -54,7 +55,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
         variant: choice,
         variantLabel: hasOptions ? optionLabel : undefined,
         price,
-        image: product.images[0],
+                image: selected?.imageUrl ?? product.images[0],
         tint: product.tint,
         stock,
       },
@@ -83,18 +84,24 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
                   type="button"
                   aria-pressed={on}
                   disabled={soldOut}
-                  onClick={() => {
+                                    onClick={() => {
                     setChoice(o.name);
                     setQty(1);
+                    if (o.imageUrl) showProductPhoto(o.imageUrl);
                   }}
                   aria-label={soldOut ? `${o.name}, sold out` : o.name}
                   className={`flex h-11 items-center gap-2.5 rounded-full bg-paper text-sm font-medium transition-colors ${
-                    o.hex ? "pl-2 pr-4" : "px-4"
+                    o.imageUrl || o.hex ? "pl-1.5 pr-4" : "px-4"
                   } ${on ? "border-2 border-ink" : "border-[1.5px] border-line-strong hover:border-ink"} ${
                     soldOut ? "cursor-not-allowed text-subtle line-through opacity-50 hover:border-line-strong" : ""
                   }`}
                 >
-                  {o.hex && <span className="h-7 w-7 rounded-full border border-black/10" style={{ background: o.hex }} />}
+                  {o.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={o.imageUrl} alt="" className="h-8 w-8 rounded-full border border-black/10 object-cover" />
+                  ) : (
+                    o.hex && <span className="h-7 w-7 rounded-full border border-black/10" style={{ background: o.hex }} />
+                  )}
                   {o.name}
                 </button>
               );

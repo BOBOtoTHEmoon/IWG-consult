@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProductImage from "../ProductImage";
+
+// Other parts of the product page (like picking a colour) can ask the gallery to show a photo.
+export const SHOW_PHOTO_EVENT = "iwg:show-photo";
+export const showProductPhoto = (url: string) =>
+  window.dispatchEvent(new CustomEvent<string>(SHOW_PHOTO_EVENT, { detail: url }));
 
 export default function ProductGallery({ images, tint, name }: { images: string[]; tint: string; name: string }) {
   const [active, setActive] = useState(0);
   // With no photos yet, show a single placeholder.
   const slides = images.length > 0 ? images : [undefined];
 
+  useEffect(() => {
+    const onShow = (e: Event) => {
+      const i = images.indexOf((e as CustomEvent<string>).detail);
+      if (i >= 0) setActive(i);
+    };
+    window.addEventListener(SHOW_PHOTO_EVENT, onShow);
+    return () => window.removeEventListener(SHOW_PHOTO_EVENT, onShow);
+  }, [images]);
+
   return (
     <div className="flex flex-col-reverse gap-3 lg:flex-row lg:gap-4">
       {slides.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto lg:flex-col">
+        <div className="flex gap-3 overflow-x-auto lg:max-h-[760px] lg:flex-col">
           {slides.map((src, i) => (
             <button
               key={src ?? i}

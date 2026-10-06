@@ -3,8 +3,13 @@
 export type ProductStatus = "draft" | "live";
 
 // One choice of a product, e.g. the black version of a wig. Each has its own stock.
-export type ProductOption = { name: string; hex?: string; stock: number };
-
+export type ProductOption = {
+  name: string;
+  hex?: string;
+  stock: number;
+  image?: string; // storage path of this option's own photo
+  imageUrl?: string; // public URL for that photo
+};
 export const OPTION_LABELS = ["Colour", "Size", "Length", "Style"] as const;
 
 // "Colour" -> "colours", "Length" -> "lengths"
@@ -46,7 +51,7 @@ export type ProductRow = {
   tag: string | null;
   tint: string;
   option_label: string | null;
-  options: { name: string; hex?: string; stock?: number }[] | null;
+    options: { name: string; hex?: string; stock?: number; image?: string }[] | null;
     free_shipping: boolean | null;
   shipping_method_ids: string[] | null;
   images: string[] | null;
@@ -74,7 +79,13 @@ export function toProduct(row: ProductRow): ShopProduct {
     tint: row.tint,
     optionLabel: row.option_label || "Colour",
     // Older rows may have options without stock; treat those as sharing the product's stock.
-    options: (row.options ?? []).map((o) => ({ name: o.name, hex: o.hex, stock: o.stock ?? row.stock })),
+       options: (row.options ?? []).map((o) => ({
+      name: o.name,
+      hex: o.hex,
+      stock: o.stock ?? row.stock,
+      image: o.image,
+      imageUrl: o.image ? productImageUrl(o.image) : undefined,
+    })),
         freeShipping: row.free_shipping ?? false,
     shippingMethodIds: row.shipping_method_ids ?? [],
     imagePaths,

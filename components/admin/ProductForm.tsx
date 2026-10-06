@@ -6,14 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { refreshShop } from "@/app/admin/actions";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
-import { OPTION_LABELS, slugify, type ShopProduct } from "@/lib/product-types";
+import { OPTION_LABELS, productImageUrl, slugify, type ShopProduct } from "@/lib/product-types";
 import type { ShippingMethod, ShippingZone } from "@/lib/shipping-types";
 import { createClient } from "@/lib/supabase/client";
 import { uniqueId } from "@/lib/unique-id";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, PlusIcon, TrashIcon } from "../Icons";
 
 // One row in the options editor. Stock is kept as text while typing.
-type OptionRow = { key: string; name: string; hex: string; stock: string };
+// A saved photo has imagePath; a newly picked one has file + preview until it uploads.
+type OptionRow = { key: string; name: string; hex: string; stock: string; imagePath?: string; file?: File; preview?: string };
 
 // A photo already saved in storage has a path. A new one has a file waiting to upload.
 type Photo = { key: string; url: string; path?: string; file?: File };
@@ -44,10 +45,10 @@ export default function ProductForm({
   const [optionLabel, setOptionLabel] = useState(product?.optionLabel ?? "Colour");
   const [optionRows, setOptionRows] = useState<OptionRow[]>(
     product?.options.length
-      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock) }))
+      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock), imagePath: o.image }))
       : [{ key: "first", name: "", hex: "#3b3733", stock: "" }]
   );
-    const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
+  const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
   const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
   const [methodIds, setMethodIds] = useState<string[]>(product?.shippingMethodIds ?? []);
   const [photos, setPhotos] = useState<Photo[]>(
@@ -90,6 +91,12 @@ export default function ProductForm({
   const updateRow = (key: string, changes: Partial<OptionRow>) =>
     setOptionRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...changes } : r)));
   const addRow = () => setOptionRows((rows) => [...rows, { key: uniqueId(), name: "", hex: "#3b3733", stock: "" }]);
+  const pickOptionPhoto = (key: string, file: File) => {
+    const url = URL.createObjectURL(file);
+    previews.current.push(url);
+    updateRow(key, { file, preview: url });
+  };
+  const clearOptionPhoto = (key: string) => updateRow(key, { file: undefined, preview: undefined, imagePath: undefined });
   const removeRow = (key: string) => setOptionRows((rows) => (rows.length > 1 ? rows.filter((r) => r.key !== key) : rows));
 
   // Find a free URL name: "rattan-basket", then "rattan-basket-2", and so on.
@@ -109,9 +116,9 @@ export default function ProductForm({
     if (!(Number(price) > 0)) return setError("Add a price greater than £0.");
     if (status === "live" && photos.length === 0) return setError("Add at least one photo before it goes live.");
 
+    const keptRows = hasOptions ? optionRows.filter((r) => r.name.trim()) : [];
     const cleanOptions = hasOptions
-      ? optionRows
-          .filter((r) => r.name.trim())
+      ? keptRows
           .map((r) => ({
             name: r.name.trim(),
             ...(isColour ? { hex: r.hex } : {}),
@@ -123,7 +130,7 @@ export default function ProductForm({
       const names = cleanOptions.map((o) => o.name.toLowerCase());
       if (new Set(names).size !== names.length) return setError("Two options have the same name. Give each one a different name.");
     }
-        // Only keep options that still exist.
+    // Only keep options that still exist.
     const chosenMethods = methodIds.filter((id) => shipping.methods.some((m) => m.id === id));
     if (limitMethods && chosenMethods.length === 0) return setError("Choose at least one delivery option, or allow all of them.");
     setError("");
@@ -149,15 +156,30 @@ export default function ProductForm({
         paths.push(path);
       }
 
-      // 2. Save the product.
+      // 2. Upload any new option photos and attach each option's photo.
+      const optionsToSave: { name: string; hex?: string; stock: number; image?: string }[] = [];
+      for (const [i, r] of keptRows.entries()) {
+        let image = r.imagePath;
+        if (r.file) {
+          const blob = await compressImage(r.file);
+          image = `${slug}/${uniqueId()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(image, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
+          if (uploadError) throw new Error("A photo didn't upload. Check your connection and try again.");
+        }
+        optionsToSave.push({ ...cleanOptions[i], ...(image ? { image } : {}) });
+      }
+
+      // 3. Save the product.
       const row = {
         name: name.trim(),
         price: Number(Number(price).toFixed(2)),
         // With options, the product's stock is the total of all its options.
         stock: hasOptions ? cleanOptions.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
-        options: cleanOptions,
+        options: optionsToSave,
         option_label: optionLabel,
-                free_shipping: freeShipping,
+        free_shipping: freeShipping,
         shipping_method_ids: limitMethods ? chosenMethods : [],
         category,
         weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
@@ -172,9 +194,12 @@ export default function ProductForm({
         : await supabase.from("products").insert({ ...row, slug });
       if (saveError) throw new Error("We couldn't save the product. Please try again.");
 
-      // 3. Clean up photos that were removed.
-      if (removedPaths.length) {
-        await supabase.storage.from(BUCKET).remove(removedPaths);
+      // 4. Clean up photos that were removed, including old option photos no longer used.
+      const keptOptionImages = new Set(optionsToSave.map((o) => o.image).filter(Boolean));
+      const oldOptionImages = (product?.options ?? []).map((o) => o.image).filter((p): p is string => Boolean(p) && !keptOptionImages.has(p));
+      const toRemove = [...removedPaths, ...oldOptionImages];
+      if (toRemove.length) {
+        await supabase.storage.from(BUCKET).remove(toRemove);
         setRemovedPaths([]);
       }
 
@@ -193,6 +218,11 @@ export default function ProductForm({
           url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
         }))
       );
+      if (hasOptions) {
+        setOptionRows(
+          keptRows.map((r, i) => ({ key: r.key, name: r.name, hex: r.hex, stock: r.stock, imagePath: optionsToSave[i].image }))
+        );
+      }
       setLive(status === "live");
       setNotice(status === "live" ? "Saved. It's live in the shop." : "Saved. It's hidden from the shop.");
       router.refresh();
@@ -215,7 +245,9 @@ export default function ProductForm({
       setError("We couldn't delete the product. Please try again.");
       return;
     }
-    if (product.imagePaths.length) await supabase.storage.from(BUCKET).remove(product.imagePaths);
+    // Delete the product's photos and any option photos with it.
+    const allPhotos = [...product.imagePaths, ...product.options.map((o) => o.image).filter((p): p is string => Boolean(p))];
+    if (allPhotos.length) await supabase.storage.from(BUCKET).remove(allPhotos);
     await refreshShop(product.slug);
     router.push("/admin/products");
     router.refresh();
@@ -337,7 +369,7 @@ export default function ProductForm({
             <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" min={0} placeholder="e.g. 850" className={input} />
           </label>
         </div>
-                <span className="-mt-2 text-[13px] text-subtle">Weight is used for delivery options priced by weight.</span>
+        <span className="-mt-2 text-[13px] text-subtle">Weight is used for delivery options priced by weight.</span>
 
         <label className={label}>
           Description
@@ -386,53 +418,95 @@ export default function ProductForm({
               </div>
 
               <ul className="flex flex-col gap-2.5">
-                {optionRows.map((r, i) => (
-                  <li key={r.key} className="flex items-end gap-2">
-                    {isColour && (
-                      <label className="flex flex-col gap-1.5 text-xs font-semibold text-subtle">
-                        <span className="sr-only">Swatch for option {i + 1}</span>
-                        <span aria-hidden="true">Swatch</span>
-                        <input
-                          type="color"
-                          value={r.hex}
-                          onChange={(e) => updateRow(r.key, { hex: e.target.value })}
-                          className="h-12 w-12 cursor-pointer rounded-xl border-[1.5px] border-line-strong bg-white p-1"
-                        />
-                      </label>
-                    )}
-                    <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs font-semibold text-subtle">
-                      {optionLabel} name
-                      <input
-                        value={r.name}
-                        onChange={(e) => updateRow(r.key, { name: e.target.value })}
-                        maxLength={30}
-                        placeholder={isColour ? (i === 0 ? "e.g. Black" : "e.g. Brown") : optionLabel === "Length" ? 'e.g. 22"' : optionLabel === "Size" ? "e.g. Medium" : "e.g. Curly"}
-                        className="h-12 w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
-                      />
-                    </label>
-                    <label className="flex w-[84px] flex-col gap-1.5 text-xs font-semibold text-subtle">
-                      Stock
-                      <input
-                        value={r.stock}
-                        onChange={(e) => updateRow(r.key, { stock: e.target.value })}
-                        type="number"
-                        min={0}
-                        placeholder="0"
-                        className="h-12 w-full rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => removeRow(r.key)}
-                      disabled={optionRows.length === 1}
-                      aria-label={`Remove option ${i + 1}`}
-                      className="flex h-12 w-10 shrink-0 items-center justify-center rounded-xl text-subtle hover:bg-sand disabled:opacity-30"
-                    >
-                      <CloseIcon size={18} />
-                    </button>
-                  </li>
-                ))}
+                {optionRows.map((r, i) => {
+                  const photo = r.preview ?? (r.imagePath ? productImageUrl(r.imagePath) : undefined);
+                  return (
+                    <li key={r.key} className="flex gap-3 rounded-2xl border border-line bg-paper p-2.5">
+                      {/* This option's own photo, shown when a customer picks it */}
+                      <div className="relative h-[100px] w-[80px] shrink-0 overflow-hidden rounded-xl border-[1.5px] border-dashed border-[#b3a591] bg-white">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                        <label
+                          className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 text-center text-[11px] font-semibold ${
+                            photo ? "text-transparent hover:bg-ink/30 hover:text-cream" : "text-muted"
+                          }`}
+                        >
+                          <CameraIcon size={18} />
+                          {photo ? "Replace" : "Photo"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="sr-only"
+                            aria-label={`Photo for option ${i + 1}`}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) pickOptionPhoto(r.key, f);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        {photo && (
+                          <button
+                            type="button"
+                            onClick={() => clearOptionPhoto(r.key)}
+                            aria-label={`Remove photo for option ${i + 1}`}
+                            className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-paper/90 text-ink"
+                          >
+                            <CloseIcon size={14} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            value={r.name}
+                            onChange={(e) => updateRow(r.key, { name: e.target.value })}
+                            maxLength={30}
+                            aria-label={`${optionLabel} name`}
+                            placeholder={isColour ? (i === 0 ? "e.g. Black" : "e.g. Brown") : optionLabel === "Length" ? 'e.g. 22"' : optionLabel === "Size" ? "e.g. Medium" : "e.g. Curly"}
+                            className="h-11 min-w-0 flex-1 rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base text-ink"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeRow(r.key)}
+                            disabled={optionRows.length === 1}
+                            aria-label={`Remove option ${i + 1}`}
+                            className="flex h-11 w-9 shrink-0 items-center justify-center rounded-xl text-subtle hover:bg-sand disabled:opacity-30"
+                          >
+                            <CloseIcon size={18} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isColour && (
+                            <input
+                              type="color"
+                              value={r.hex}
+                              onChange={(e) => updateRow(r.key, { hex: e.target.value })}
+                              aria-label={`Swatch colour for option ${i + 1}`}
+                              className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border-[1.5px] border-line-strong bg-white p-1"
+                            />
+                          )}
+                          <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
+                            Stock
+                            <input
+                              value={r.stock}
+                              onChange={(e) => updateRow(r.key, { stock: e.target.value })}
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              className="h-11 w-[84px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
+              <p className="text-[13px] text-subtle">
+                Add a photo to an option and the product page switches to it when a customer picks that option.
+              </p>
               <button
                 type="button"
                 onClick={addRow}
@@ -445,7 +519,7 @@ export default function ProductForm({
           )}
         </section>
 
-                <section className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-4">
+        <section className="flex flex-col gap-4 rounded-[18px] border border-line bg-white p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[15px] font-semibold">Delivery</span>
             <span className="text-[13px] text-subtle">
@@ -463,6 +537,11 @@ export default function ProductForm({
 
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold">Which delivery options can it use?</span>
+            <span className="-mt-1 text-[13px] text-subtle">
+              {freeShipping
+                ? "Delivery is free on whichever of these the customer picks. Choose \"Only the ones I choose\" to limit it, for example free UK delivery only."
+                : "Leave on \"All of them\" unless this product can't go with some options, for example large items that can't be sent abroad."}
+            </span>
             <div className="grid grid-cols-2 gap-2">
               {[false, true].map((limited) => (
                 <button

@@ -61,13 +61,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ...others.filter((p) => p.category !== product.category),
   ].slice(0, 4);
 
+    // Product photos first, then each option's own photo.
+  const galleryImages = [
+    ...product.images,
+    ...product.options.map((o) => o.imageUrl).filter((u): u is string => Boolean(u) && !product.images.includes(u!)),
+  ];
+
   // Product details in the format Google uses for shopping results (price, stock, photo).
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description || undefined,
-    image: product.images.length ? product.images : undefined,
+        image: galleryImages.length ? galleryImages : undefined,
     sku: product.slug,
     category: categoryName(product.category),
     brand: { "@type": "Brand", name: site.name },
@@ -98,8 +104,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </nav>
 
         <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-[72px]">
-          <ProductGallery images={product.images} tint={product.tint} name={product.name} />
-
+                   <ProductGallery images={galleryImages} tint={product.tint} name={product.name} />
           <div className="flex flex-1 flex-col gap-6">
             <div className="flex flex-col gap-3">
               <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-clay">
