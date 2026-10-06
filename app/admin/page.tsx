@@ -7,7 +7,7 @@ import { STATUS_LABEL, STATUS_TONE, destination, shortName, type OrderStatus } f
 import { getMonthSales, getOrders } from "@/lib/orders";
 import { LOW_STOCK } from "@/lib/product-types";
 import { getAllProducts } from "@/lib/products";
-
+import { getAskedQuestions } from "@/lib/assistant-questions";
 // Render on every visit so the greeting and date are always current.
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,7 @@ export default async function AdminOverview() {
   const liveProducts = products.filter((p) => p.status === "live");
   const drafts = products.length - liveProducts.length;
   const low = liveProducts.filter((p) => p.stock <= LOW_STOCK).sort((a, b) => a.stock - b.stock);
-  const [allOrders, month] = await Promise.all([getOrders(50), getMonthSales()]);
+   const [allOrders, month, asked] = await Promise.all([getOrders(50), getMonthSales(), getAskedQuestions(7, 3)]);
   const orders = allOrders.slice(0, 5);
   const toPack = allOrders.filter((o) => o.status === "to_pack").length;
 
@@ -211,10 +211,17 @@ export default async function AdminOverview() {
               <SparkleIcon className="text-gold" />
               <h2 className="text-[17px] font-bold">What shoppers asked this week</h2>
             </div>
-            {/* TODO (AI phase): show the most asked questions from the assistant's chat log. */}
-            <p className="text-[15px] leading-relaxed text-[#e8d9c6]">
-              Once the Ask Goody assistant is live, the questions shoppers ask most will show up here.
-            </p>
+                        {asked.length === 0 ? (
+              <p className="text-[15px] leading-relaxed text-[#e8d9c6]">No questions this week yet.</p>
+            ) : (
+              asked.map((q) => (
+                <span key={q.question} className="rounded-xl bg-cream/10 px-3.5 py-3 text-[15px]">
+                  {q.question}
+                  {q.count > 1 && <span className="ml-2 text-[13px] text-[#e8c98f]">{q.count} times</span>}
+                </span>
+              ))
+            )}
+            <Link href="/admin/assistant" className="text-sm font-semibold text-[#e8c98f]">See all questions</Link>
           </section>
         </div>
       </div>
