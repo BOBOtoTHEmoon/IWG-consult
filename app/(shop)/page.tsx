@@ -94,7 +94,7 @@ export default async function HomePage() {
               href="/sourcing"
               className="flex h-[54px] items-center justify-center rounded-full border-[1.5px] border-ink px-[26px] text-base font-semibold text-ink transition-[background-color,color,transform] hover:bg-ink hover:text-cream active:scale-[0.98]"
             >
-              Source something custom
+              Source a product
             </Link>
           </div>
           <div className="animate-fade-up hidden flex-wrap gap-7 border-t border-line pt-5 text-sm text-muted sm:flex" style={delay(320)}>

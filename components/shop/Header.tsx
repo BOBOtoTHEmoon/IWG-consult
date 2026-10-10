@@ -14,15 +14,22 @@ const iconBtn =
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-    const [searchOpen, setSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const basket = useBasket();
   const count = basket.ready ? basket.count : 0;
 
+  // Main links: big in the phone menu. "short" is the label used in the desktop menu bar.
   const nav = [
     { href: "/shop", label: "Shop", active: pathname.startsWith("/shop") || pathname.startsWith("/product") },
     { href: "/sourcing", label: "Sourcing services", active: pathname.startsWith("/sourcing") },
   ];
+  // Help links: smaller in the phone menu, after the main links in the desktop menu bar.
+  const help = [
+    { href: "/faqs", label: "FAQs", short: "FAQs" },
+    { href: "/contact", label: "Contact us", short: "Contact us" },
+    { href: "/terms", label: "Terms and conditions", short: "Terms" },
+  ].map((l) => ({ ...l, active: pathname.startsWith(l.href) }));
 
   // Close the menu whenever the page changes.
   useEffect(() => {
@@ -42,10 +49,12 @@ export default function Header() {
     };
   }, [open]);
 
+  const desktopLink = (active: boolean) => (active ? "font-semibold text-clay" : "text-ink hover:text-clay");
+
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-cream/95 backdrop-blur">
-        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center justify-between px-2 sm:px-6 lg:h-[84px] lg:px-20">
+        <div className="mx-auto flex h-[60px] max-w-[1440px] items-center justify-between px-2 sm:px-6 lg:h-[84px] lg:px-12 xl:px-20">
           <button
             className={`${iconBtn} lg:hidden`}
             aria-label="Open menu"
@@ -56,20 +65,15 @@ export default function Header() {
             <MenuIcon size={22} />
           </button>
           <Logo />
-          <nav aria-label="Main" className="hidden gap-10 text-[15px] font-medium lg:flex">
-            {nav.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                aria-current={n.active ? "page" : undefined}
-                className={n.active ? "font-semibold text-clay" : "text-ink hover:text-clay"}
-              >
-                {n.label}
+          <nav aria-label="Main" className="hidden items-center gap-7 text-[15px] font-medium lg:flex xl:gap-9">
+            {[...nav.map((n) => ({ ...n, short: n.label })), ...help].map((n) => (
+              <Link key={n.href} href={n.href} aria-current={n.active ? "page" : undefined} className={desktopLink(n.active)}>
+                {n.short}
               </Link>
             ))}
           </nav>
           <div className="flex items-center gap-1">
-                       <button onClick={() => setSearchOpen(true)} className={iconBtn} aria-label="Search">
+            <button onClick={() => setSearchOpen(true)} className={iconBtn} aria-label="Search">
               <SearchIcon />
             </button>
             <button
@@ -88,7 +92,7 @@ export default function Header() {
         </div>
       </header>
 
-            <SearchDialog open={searchOpen} onClose={closeSearch} />
+      <SearchDialog open={searchOpen} onClose={closeSearch} />
 
       {/* Mobile menu lives outside the header so the blur does not trap it. */}
       <div
@@ -110,7 +114,7 @@ export default function Header() {
             <CloseIcon />
           </button>
         </div>
-        <nav aria-label="Mobile" className="flex flex-col px-5 py-4">
+        <nav aria-label="Mobile" className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
           {nav.map((n, i) => (
             <Link
               key={n.href}
@@ -124,6 +128,23 @@ export default function Header() {
               {n.label}
             </Link>
           ))}
+          <div
+            style={{ transitionDelay: open ? "200ms" : "0ms" }}
+            className={`flex flex-col pt-4 transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
+              open ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+            }`}
+          >
+            {help.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                onClick={() => setOpen(false)}
+                className={`flex h-12 items-center text-lg font-semibold ${n.active ? "text-clay" : "text-muted"}`}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
         </nav>
       </div>
     </>
