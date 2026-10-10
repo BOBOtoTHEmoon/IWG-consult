@@ -25,6 +25,27 @@ export default function SourcingForm() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const previews = useRef<string[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
+  const [asideInView, setAsideInView] = useState(false);
+
+  // Hide the floating button once the real summary box is on screen.
+  useEffect(() => {
+    const el = asideRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setAsideInView(entry.isIntersecting), { threshold: 0.2 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  function floatingContinue() {
+    if (agreed) {
+      formRef.current?.requestSubmit(); // the browser also checks required fields first
+    } else {
+      setError("Please tick the box to confirm you understand how the £50 works.");
+      asideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 
   useEffect(() => () => previews.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
@@ -66,7 +87,7 @@ export default function SourcingForm() {
   }
 
   return (
-    <form id="request" onSubmit={onSubmit} className="flex scroll-mt-28 flex-col items-start gap-12 lg:flex-row">
+    <form ref={formRef} id="request" onSubmit={onSubmit} className="flex scroll-mt-28 flex-col items-start gap-12 lg:flex-row">
       <div className="flex w-full flex-1 flex-col gap-5">
         <div className="flex flex-col gap-2.5 pb-2">
           <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-clay">Start your request</span>
@@ -208,7 +229,7 @@ export default function SourcingForm() {
         <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       </div>
 
-      <aside className="flex w-full flex-col gap-4 rounded-3xl bg-ink p-6 text-cream sm:p-[30px] lg:sticky lg:top-28 lg:mt-24 lg:w-[420px] lg:shrink-0">
+      <aside ref={asideRef} className="flex w-full flex-col gap-4 rounded-3xl bg-ink p-6 text-cream sm:p-[30px] lg:sticky lg:top-28 lg:mt-24 lg:w-[420px] lg:shrink-0">
         <h2 className="text-xl font-bold">Your request</h2>
         <div className="flex justify-between text-[15px] text-[#d9cfc0]">
           <span>Items on your list</span>
@@ -230,7 +251,10 @@ export default function SourcingForm() {
           <input
             type="checkbox"
             checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
+            onChange={(e) => {
+              setAgreed(e.target.checked);
+              if (e.target.checked) setError("");
+            }}
             className="mt-0.5 h-5 w-5 shrink-0 accent-gold"
           />
           I understand the £50 is refunded only if I go ahead with the purchase, and is kept if I don&apos;t.
@@ -248,6 +272,27 @@ export default function SourcingForm() {
           {sending ? "Saving your list..." : "Continue to payment"}
         </button>
       </aside>
+
+      {/* Phones: the next step stays at the bottom of the screen while they fill in their list */}
+      <div
+        aria-hidden={asideInView}
+        className={`fixed bottom-6 left-5 right-[92px] z-30 transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none lg:hidden ${
+          asideInView ? "pointer-events-none translate-y-4 opacity-0" : "translate-y-0 opacity-100"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={floatingContinue}
+          disabled={sending}
+          tabIndex={asideInView ? -1 : 0}
+          className="flex h-14 w-full items-center justify-between rounded-full bg-ink pl-5 pr-1.5 text-cream shadow-[0_12px_30px_rgba(26,24,20,0.35)] disabled:opacity-60"
+        >
+          <span className="text-sm font-semibold">£50 to pay next</span>
+          <span className="flex h-11 items-center rounded-full bg-paypal px-5 text-[15px] font-bold text-ink">
+            {sending ? "Saving..." : "Continue"}
+          </span>
+        </button>
+      </div>
     </form>
   );
 }

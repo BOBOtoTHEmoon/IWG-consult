@@ -32,6 +32,7 @@ export type OrderItem = {
 export type Order = {
   id: string;
   number: string;
+  publicRef: string;
   status: OrderStatus;
   customerName: string;
   email: string;
@@ -61,6 +62,7 @@ type ItemRow = {
 export type OrderRow = {
   id: string;
   number: string;
+  public_ref: string;
   status: OrderStatus;
   customer_name: string;
   email: string;
@@ -80,12 +82,13 @@ export type OrderRow = {
 };
 
 export const ORDER_COLUMNS =
-  "id, number, status, customer_name, email, phone, address_line1, address_line2, city, postcode, country, shipping_method, shipping_price, subtotal, total, tracking_number, created_at, order_items (id, product_slug, name, variant, image_path, quantity, unit_price)";
+  "id, number, public_ref, status, customer_name, email, phone, address_line1, address_line2, city, postcode, country, shipping_method, shipping_price, subtotal, total, tracking_number, created_at, order_items (id, product_slug, name, variant, image_path, quantity, unit_price)";
 
 export function toOrder(row: OrderRow): Order {
   return {
     id: row.id,
     number: row.number,
+    publicRef: row.public_ref,
     status: row.status,
     customerName: row.customer_name,
     email: row.email,

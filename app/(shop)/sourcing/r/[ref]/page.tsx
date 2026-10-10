@@ -4,6 +4,7 @@ import { CheckIcon, InfoIcon, MailIcon, WhatsappIcon } from "@/components/Icons"
 import { site } from "@/lib/site";
 import { getSourcingRequestByRef } from "@/lib/sourcing";
 import { whatsappLink, whatsappMessage } from "@/lib/sourcing-types";
+   import SourcingPayButton from "@/components/shop/SourcingPayButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your sourcing request | Import with Goody", robots: { index: false } };
@@ -71,10 +72,7 @@ export default async function SourcingRequestStatus({ params }: { params: Promis
             Your list is saved. Goody starts sourcing as soon as the £50 commitment fee is paid, and it&apos;s refunded when you
             go ahead with the purchase.
           </p>
-          {/* TODO (PayPal step): PayPal buttons for £50. On success, call markSourcingFeePaid and reload this page. */}
-          <button disabled className="h-14 rounded-full bg-paypal text-base font-bold text-ink opacity-60">
-            Pay £50 with PayPal (coming soon)
-          </button>
+                     <SourcingPayButton refId={r.publicRef} />
           <p className="flex items-start gap-2.5 text-sm leading-relaxed text-subtle">
             <InfoIcon size={18} className="mt-0.5 shrink-0" />
             Keep this page open, or come back to it from the same link. Once you&apos;ve paid, you&apos;ll see your

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+   import { useRouter } from "next/navigation";
+   import { useEffect, useMemo, useRef, useState } from "react";
 import { COUNTRIES, countryName } from "@/lib/countries";
 import { gbp } from "@/lib/data";
 import { productImageUrl } from "@/lib/product-types";
@@ -20,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BagIcon, InfoIcon, TruckIcon } from "../Icons";
 import ProductImage from "../ProductImage";
 import { useBasket, type BasketItem } from "./BasketProvider";
+   import PayPalPay from "./PayPalPay";
 import QuantityStepper from "./QuantityStepper";
 
 const input = "h-[52px] rounded-xl border-[1.5px] border-line-strong bg-white px-4 text-base font-normal";
@@ -30,7 +32,9 @@ const card = "flex flex-col gap-4 rounded-[20px] border border-line bg-paper p-5
 type ProductDelivery = { weightGrams: number | null; freeShipping: boolean; allowedMethodIds: string[] };
 
 export default function CheckoutView() {
-  const { items, subtotal, ready, setQty, remove, replace } = useBasket();
+   const router = useRouter();
+   const formRef = useRef<HTMLFormElement>(null);
+   const { items, subtotal, ready, setQty, remove, replace, clear } = useBasket();
   const [checked, setChecked] = useState(false);
   const [changes, setChanges] = useState<string[]>([]);
   const [country, setCountry] = useState("GB");
@@ -146,6 +150,31 @@ export default function CheckoutView() {
     if (selected && selected.method.id !== methodId) setMethodId(selected.method.id);
   }, [selected, methodId]);
 
+     // Everything the server needs to work out the order. Returns null if the form isn't complete.
+   function checkoutPayload() {
+     const form = formRef.current;
+     if (!form || !selected) return null;
+     if (!form.reportValidity()) return null;
+     const f = new FormData(form);
+     const get = (k: string) => String(f.get(k) ?? "");
+     return {
+       items: items.map((i) => ({ productId: i.productId, variant: i.variant, quantity: i.qty })),
+       methodId: selected.method.id,
+       newsletter: f.get("newsletter") === "on",
+       customer: {
+         email: get("email"),
+         firstName: get("firstName"),
+         lastName: get("lastName"),
+         phone: get("phone"),
+         address1: get("address1"),
+         address2: get("address2"),
+         city: get("city"),
+         postcode: get("postcode"),
+         country,
+       },
+     };
+   }
+
   const deliveryPrice = selected?.price ?? 0;
   const total = subtotal + deliveryPrice;
 
@@ -186,8 +215,9 @@ export default function CheckoutView() {
   }
 
   return (
-    <form
-      onSubmit={(e) => e.preventDefault()}
+          <form
+         ref={formRef}
+         onSubmit={(e) => e.preventDefault()}
       className="mx-auto flex max-w-[1440px] flex-col-reverse items-start gap-8 px-5 pb-20 pt-8 sm:px-10 lg:flex-row lg:gap-12 lg:px-20 lg:pt-12"
     >
       <div className="flex w-full flex-1 flex-col gap-5">
@@ -299,10 +329,18 @@ export default function CheckoutView() {
           <p className="text-[15px] leading-relaxed text-muted">
             You will finish paying securely with PayPal. Use your PayPal balance, or pay by debit or credit card without an account.
           </p>
-          {/* TODO (PayPal step): replace with PayPal buttons. The server re-checks stock, prices and delivery before taking payment. */}
-          <button type="submit" disabled className="h-[58px] rounded-full bg-paypal text-[17px] font-bold text-ink opacity-60">
-            Pay with PayPal (coming soon)
-          </button>
+                      <PayPalPay
+               createUrl="/api/checkout/create"
+               captureUrl="/api/checkout/capture"
+               createBody={checkoutPayload}
+               captureBody={(paypalOrderId) => ({ paypalOrderId })}
+               onPaid={(result) => {
+                 clear();
+                 router.push(result.ref ? `/order/${result.ref}` : "/shop");
+               }}
+               disabled={!selected}
+               refreshKey={[selected?.method.id, total, country]}
+             />
           <span className="text-center text-[13px] text-subtle">
             By placing your order you agree to our{" "}
             <Link href="/terms" className="underline">terms</Link> and{" "}

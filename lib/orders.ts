@@ -1,3 +1,4 @@
+   import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ORDER_COLUMNS, toOrder, type Order, type OrderRow } from "@/lib/order-types";
 
@@ -52,3 +53,15 @@ export async function getOrderById(id: string): Promise<Order | null> {
   if (error) console.error("getOrderById:", error.message);
   return data ? toOrder(data as unknown as OrderRow) : null;
 }
+   // ---------- Server-only reads for the checkout and the customer's thank-you page ----------
+
+   export async function getOrderAdmin(by: { id?: string; publicRef?: string }): Promise<Order | null> {
+     const supabase = createAdminClient();
+     let query = supabase.from("orders").select(ORDER_COLUMNS);
+     if (by.id) query = query.eq("id", by.id);
+     else if (by.publicRef && /^[0-9a-f-]{36}$/i.test(by.publicRef)) query = query.eq("public_ref", by.publicRef);
+     else return null;
+     const { data, error } = await query.maybeSingle();
+     if (error) console.error("getOrderAdmin:", error.message);
+     return data ? toOrder(data as unknown as OrderRow) : null;
+   }
