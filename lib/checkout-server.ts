@@ -91,10 +91,12 @@ export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkou
   for (const w of wanted) {
     const p = products.get(w.productId);
     if (!p || p.status !== "live") return { ok: false, error: "Something in your basket is no longer available. Please check your basket." };
-    const options = (p.options ?? []) as { name: string; stock?: number; image?: string }[];
+  const options = (p.options ?? []) as { name: string; stock?: number; image?: string; price?: number | string | null }[];
     const option = w.variant ? options.find((o) => o.name === w.variant) : undefined;
     if (options.length > 0 && !option) return { ok: false, error: `Please choose an option for ${p.name}.` };
     const stock = option ? (option.stock ?? p.stock) : p.stock;
+    // An option with its own price uses it; otherwise the product price.
+    const unitPrice = option?.price != null && option.price !== "" ? Number(option.price) : Number(p.price);
     if (w.quantity > stock) {
       return { ok: false, error: stock > 0 ? `Only ${stock} of ${p.name}${option ? ` (${option.name})` : ""} left.` : `${p.name} has just sold out.` };
     }
@@ -105,12 +107,12 @@ export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkou
       variant: option?.name ?? null,
       variantLabel: option ? p.option_label || "Option" : null,
       quantity: w.quantity,
-      unitPrice: Number(p.price),
+      unitPrice,
       imagePath: option?.image ?? p.images?.[0] ?? null,
     });
     delivery.push({
       quantity: w.quantity,
-      unitPrice: Number(p.price),
+      unitPrice,
       weightGrams: p.weight_grams,
       freeShipping: p.free_shipping ?? false,
       allowedMethodIds: p.shipping_method_ids ?? [],

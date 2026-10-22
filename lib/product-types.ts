@@ -7,8 +7,9 @@ export type ProductOption = {
   name: string;
   hex?: string;
   stock: number;
-  image?: string; // storage path of this option's own photo
-  imageUrl?: string; // public URL for that photo
+  price?: number; 
+  image?: string;
+  imageUrl?: string;
 };
 export const OPTION_LABELS = ["Colour", "Size", "Length", "Style"] as const;
 
@@ -51,7 +52,7 @@ export type ProductRow = {
   tag: string | null;
   tint: string;
   option_label: string | null;
-    options: { name: string; hex?: string; stock?: number; image?: string }[] | null;
+  options: { name: string; hex?: string; stock?: number; price?: number | string | null; image?: string }[] | null;
     free_shipping: boolean | null;
   shipping_method_ids: string[] | null;
   images: string[] | null;
@@ -83,6 +84,7 @@ export function toProduct(row: ProductRow): ShopProduct {
       name: o.name,
       hex: o.hex,
       stock: o.stock ?? row.stock,
+      price: o.price != null && o.price !== "" && Number.isFinite(Number(o.price)) ? Number(o.price) : undefined,
       image: o.image,
       imageUrl: o.image ? productImageUrl(o.image) : undefined,
     })),
@@ -92,6 +94,16 @@ export function toProduct(row: ProductRow): ShopProduct {
     images: imagePaths.map(productImageUrl),
     createdAt: row.created_at,
   };
+}
+
+// What a customer pays for one option. An option with no price of its own uses the product price.
+export const optionPrice = (product: { price: number }, option?: { price?: number } | null) =>
+  option?.price ?? product.price;
+
+// Lowest and highest price across a product's options (just the product price when it has none).
+export function priceRange(product: { price: number; options: { price?: number }[] }) {
+  const prices = product.options.length ? product.options.map((o) => o.price ?? product.price) : [product.price];
+  return { min: Math.min(...prices), max: Math.max(...prices) };
 }
 
 // "Stoneware Breakfast Set!" -> "stoneware-breakfast-set"

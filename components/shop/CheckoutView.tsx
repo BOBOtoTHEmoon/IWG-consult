@@ -91,7 +91,7 @@ export default function CheckoutView() {
           continue;
         }
         // Stock for this option if it has one, otherwise for the product.
-        const options = (p.options ?? []) as { name: string; stock?: number }[];
+        const options = (p.options ?? []) as { name: string; stock?: number; price?: number | string | null }[];
         const option = item.variant ? options.find((o) => o.name === item.variant) : undefined;
         if (item.variant && !option) {
           notes.push(`${name} is no longer available and was removed.`);
@@ -104,8 +104,8 @@ export default function CheckoutView() {
         }
         const qty = Math.min(item.qty, stock);
         if (qty < item.qty) notes.push(`Only ${stock} of ${name} left, so we've updated your quantity.`);
-        const price = Number(p.price);
-        if (price !== item.price) notes.push(`The price of ${item.name} has changed to ${gbp(price)}.`);
+        const price = option?.price != null && option.price !== "" ? Number(option.price) : Number(p.price);
+        if (price !== item.price) notes.push(`The price of ${name} has changed to ${gbp(price)}.`);
         next.push({
           ...item,
           qty,
