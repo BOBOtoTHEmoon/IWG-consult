@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { gbp } from "@/lib/data";
-import type { ShopProduct } from "@/lib/product-types";
+import { optionPrice, priceRange, type ShopProduct } from "@/lib/product-types";
 import { CheckIcon } from "../Icons";
 import { showProductPhoto } from "./ProductGallery";
 import { basketKey, useBasket } from "./BasketProvider";
@@ -13,7 +13,7 @@ import QuantityStepper from "./QuantityStepper";
 export default function ProductBuyBox({ product }: { product: ShopProduct }) {
   const router = useRouter();
   const { add, items, open } = useBasket();
-  const { options, optionLabel, price } = product;
+  const { options, optionLabel } = product;
   const hasOptions = options.length > 0;
 
   // Start on the first option that's in stock.
@@ -24,6 +24,9 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
   const [added, setAdded] = useState(false);
 
   const selected = hasOptions ? options.find((o) => o.name === choice) : undefined;
+  const price = optionPrice(product, selected);
+  const range = priceRange(product);
+  const pricesVary = range.min !== range.max;
   const stock = hasOptions ? (selected?.stock ?? 0) : product.stock;
   const allSoldOut = hasOptions ? options.every((o) => o.stock <= 0) : product.stock <= 0;
 
@@ -109,6 +112,8 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
           </div>
         </fieldset>
       )}
+
+{pricesVary && <p className="text-[28px] font-semibold">{gbp(price)}</p>}
 
       {canAdd === 0 ? (
         <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">

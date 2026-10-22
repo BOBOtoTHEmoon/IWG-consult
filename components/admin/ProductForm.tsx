@@ -14,7 +14,7 @@ import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, PlusIcon, TrashIcon 
 
 // One row in the options editor. Stock is kept as text while typing.
 // A saved photo has imagePath; a newly picked one has file + preview until it uploads.
-type OptionRow = { key: string; name: string; hex: string; stock: string; imagePath?: string; file?: File; preview?: string };
+type OptionRow = { key: string; name: string; hex: string; stock: string; price: string; imagePath?: string; file?: File; preview?: string };
 
 // A photo already saved in storage has a path. A new one has a file waiting to upload.
 type Photo = { key: string; url: string; path?: string; file?: File };
@@ -45,8 +45,8 @@ export default function ProductForm({
   const [optionLabel, setOptionLabel] = useState(product?.optionLabel ?? "Colour");
   const [optionRows, setOptionRows] = useState<OptionRow[]>(
     product?.options.length
-      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock), imagePath: o.image }))
-      : [{ key: "first", name: "", hex: "#3b3733", stock: "" }]
+      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock), price: o.price != null ? o.price.toFixed(2) : "", imagePath: o.image }))
+      : [{ key: "first", name: "", hex: "#3b3733", stock: "", price: "" }]
   );
   const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
   const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
@@ -90,7 +90,7 @@ export default function ProductForm({
   const optionTotal = optionRows.reduce((n, r) => n + Math.max(0, Math.floor(Number(r.stock) || 0)), 0);
   const updateRow = (key: string, changes: Partial<OptionRow>) =>
     setOptionRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...changes } : r)));
-  const addRow = () => setOptionRows((rows) => [...rows, { key: uniqueId(), name: "", hex: "#3b3733", stock: "" }]);
+  const addRow = () => setOptionRows((rows) => [...rows, { key: uniqueId(), name: "", hex: "#3b3733", stock: "", price: "" }]);
   const pickOptionPhoto = (key: string, file: File) => {
     const url = URL.createObjectURL(file);
     previews.current.push(url);
@@ -123,9 +123,15 @@ export default function ProductForm({
             name: r.name.trim(),
             ...(isColour ? { hex: r.hex } : {}),
             stock: Math.max(0, Math.floor(Number(r.stock) || 0)),
+            // Blank, or the same as the product price, means "use the product price".
+            ...(r.price.trim() !== "" && Number(Number(r.price).toFixed(2)) !== Number(Number(price).toFixed(2))
+              ? { price: Number(Number(r.price).toFixed(2)) }
+              : {}),
           }))
       : [];
     if (hasOptions) {
+      const badPrice = keptRows.find((r) => r.price.trim() !== "" && !(Number(r.price) > 0));
+      if (badPrice) return setError(`Give "${badPrice.name.trim()}" a price greater than £0, or leave it blank to use the product price.`);
       if (cleanOptions.length < 2) return setError(`Add at least two ${optionLabel.toLowerCase()} options, or switch options off.`);
       const names = cleanOptions.map((o) => o.name.toLowerCase());
       if (new Set(names).size !== names.length) return setError("Two options have the same name. Give each one a different name.");
@@ -157,7 +163,7 @@ export default function ProductForm({
       }
 
       // 2. Upload any new option photos and attach each option's photo.
-      const optionsToSave: { name: string; hex?: string; stock: number; image?: string }[] = [];
+      const optionsToSave: { name: string; hex?: string; stock: number; price?: number; image?: string }[] = [];
       for (const [i, r] of keptRows.entries()) {
         let image = r.imagePath;
         if (r.file) {
@@ -220,7 +226,7 @@ export default function ProductForm({
       );
       if (hasOptions) {
         setOptionRows(
-          keptRows.map((r, i) => ({ key: r.key, name: r.name, hex: r.hex, stock: r.stock, imagePath: optionsToSave[i].image }))
+          keptRows.map((r, i) => ({ key: r.key, name: r.name, hex: r.hex, stock: r.stock, price: r.price, imagePath: optionsToSave[i].image }))
         );
       }
       setLive(status === "live");
@@ -477,7 +483,7 @@ export default function ProductForm({
                             <CloseIcon size={18} />
                           </button>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {isColour && (
                             <input
                               type="color"
@@ -498,6 +504,17 @@ export default function ProductForm({
                               className="h-11 w-[84px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
                             />
                           </label>
+                          <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
+                            Price (£)
+                            <input
+                              value={r.price}
+                              onChange={(e) => updateRow(r.key, { price: e.target.value })}
+                              inputMode="decimal"
+                              aria-label={`Price for option ${i + 1}`}
+                              placeholder={Number(price) > 0 ? Number(price).toFixed(2) : "Same"}
+                              className="h-11 w-[96px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                            />
+                          </label>
                         </div>
                       </div>
                     </li>
@@ -505,7 +522,7 @@ export default function ProductForm({
                 })}
               </ul>
               <p className="text-[13px] text-subtle">
-                Add a photo to an option and the product page switches to it when a customer picks that option.
+                Add a photo to an option and the product page switches to it when a customer picks that option. Leave an option&apos;s price blank to use the product price above.
               </p>
               <button
                 type="button"
