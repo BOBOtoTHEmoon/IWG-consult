@@ -1,6 +1,7 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import { PRICE_RANGES, PRODUCT_COLUMNS, toProduct, type ProductRow, type ShopProduct } from "@/lib/product-types";
+import { withSalesSignals } from "@/lib/shop-signals";
 
 // ---------- Shop (live products only) ----------
 export type ProductQuery = {
@@ -38,7 +39,7 @@ export async function getLiveProducts(opts: ProductQuery = {}): Promise<ShopProd
     console.error("getLiveProducts:", error.message);
     return [];
   }
-  return (data as ProductRow[]).map(toProduct);
+  return withSalesSignals((data as ProductRow[]).map(toProduct));
 }
 
 export async function getLiveProduct(slug: string): Promise<ShopProduct | null> {
@@ -50,7 +51,9 @@ export async function getLiveProduct(slug: string): Promise<ShopProduct | null> 
     .eq("status", "live")
     .maybeSingle();
   if (error) console.error("getLiveProduct:", error.message);
-  return data ? toProduct(data as ProductRow) : null;
+  if (!data) return null;
+  const [product] = await withSalesSignals([toProduct(data as ProductRow)]);
+  return product;
 }
 
 export async function getLiveProductById(id: string): Promise<ShopProduct | null> {

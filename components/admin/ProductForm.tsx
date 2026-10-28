@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { refreshShop } from "@/app/admin/actions";
+import { guessColour } from "@/lib/colour-names";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
 import { PAYMENT_CHOICES, sameMethods, type PaymentMethod } from "@/lib/payment-methods";
@@ -12,10 +13,19 @@ import type { ShippingMethod, ShippingZone } from "@/lib/shipping-types";
 import { createClient } from "@/lib/supabase/client";
 import { uniqueId } from "@/lib/unique-id";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, CloseIcon, PlusIcon, TrashIcon } from "../Icons";
+import OptionCombosEditor, {
+  checkCombos,
+  comboStateFromProduct,
+  comboStateFromRows,
+  comboTotal,
+  type BuiltCombo,
+  type ComboState,
+} from "./OptionCombosEditor";
 
 // One row in the options editor. Stock is kept as text while typing.
 // A saved photo has imagePath; a newly picked one has file + preview until it uploads.
-type OptionRow = { key: string; name: string; hex: string; stock: string; price: string; imagePath?: string; file?: File; preview?: string };
+// hexTouched: staff picked the swatch themselves, so typing a name no longer changes it.
+type OptionRow = { key: string; name: string; hex: string; hexTouched?: boolean; stock: string; price: string; imagePath?: string; file?: File; preview?: string };
 
 // A photo already saved in storage has a path. A new one has a file waiting to upload.
 type Photo = { key: string; url: string; path?: string; file?: File };
@@ -44,15 +54,19 @@ export default function ProductForm({
   const [live, setLive] = useState(product ? product.status === "live" : true);
   const [hasOptions, setHasOptions] = useState((product?.options.length ?? 0) > 0);
   const [optionLabel, setOptionLabel] = useState(product?.optionLabel ?? "Colour");
+  // Saved with two option types (e.g. Size and Colour)?
+  const savedTwo = Boolean(product?.optionLabel2 && product.options.length > 0 && product.options.every((o) => o.values?.length === 2));
+  const [secondLabel, setSecondLabel] = useState<string | null>(savedTwo ? product!.optionLabel2 : null);
+  const [combos, setCombos] = useState<ComboState>(() => comboStateFromProduct(product));
   const [optionRows, setOptionRows] = useState<OptionRow[]>(
-    product?.options.length
-      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", stock: String(o.stock), price: o.price != null ? o.price.toFixed(2) : "", imagePath: o.image }))
+    product?.options.length && !savedTwo
+      ? product.options.map((o) => ({ key: uniqueId(), name: o.name, hex: o.hex ?? "#3b3733", hexTouched: true, stock: String(o.stock), price: o.price != null ? o.price.toFixed(2) : "", imagePath: o.image }))
       : [{ key: "first", name: "", hex: "#3b3733", stock: "", price: "" }]
   );
   const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
   const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
   const [methodIds, setMethodIds] = useState<string[]>(product?.shippingMethodIds ?? []);
-    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(product?.paymentMethods ?? ["paypal"]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(product?.paymentMethods ?? ["paypal"]);
   const [photos, setPhotos] = useState<Photo[]>(
     product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
@@ -89,9 +103,27 @@ export default function ProductForm({
   }
 
   const isColour = optionLabel === "Colour";
-  const optionTotal = optionRows.reduce((n, r) => n + Math.max(0, Math.floor(Number(r.stock) || 0)), 0);
+  const twoOptions = hasOptions && secondLabel !== null;
+  const optionTotal = twoOptions ? comboTotal(combos) : optionRows.reduce((n, r) => n + Math.max(0, Math.floor(Number(r.stock) || 0)), 0);
   const updateRow = (key: string, changes: Partial<OptionRow>) =>
     setOptionRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...changes } : r)));
+  // Typing a colour name fills the swatch, until a swatch is picked by hand.
+  const renameRow = (r: OptionRow, name: string) =>
+    updateRow(r.key, { name, ...(isColour && !r.hexTouched ? { hex: guessColour(name) ?? r.hex } : {}) });
+  // A second option type, e.g. Size as well as Colour.
+  function addSecondOption() {
+    setCombos(comboStateFromRows(optionRows));
+    setSecondLabel(optionLabel === "Colour" ? "Size" : "Colour");
+  }
+  function removeSecondOption() {
+    const named = combos.a.filter((r) => r.name.trim());
+    setOptionRows(
+      named.length
+        ? named.map((r) => ({ key: r.key, name: r.name, hex: r.hex, hexTouched: true, stock: "", price: "", imagePath: r.imagePath, file: r.file, preview: r.preview }))
+        : [{ key: uniqueId(), name: "", hex: "#3b3733", stock: "", price: "" }]
+    );
+    setSecondLabel(null);
+  }
   const addRow = () => setOptionRows((rows) => [...rows, { key: uniqueId(), name: "", hex: "#3b3733", stock: "", price: "" }]);
   const pickOptionPhoto = (key: string, file: File) => {
     const url = URL.createObjectURL(file);
@@ -118,8 +150,15 @@ export default function ProductForm({
     if (!(Number(price) > 0)) return setError("Add a price greater than £0.");
     if (status === "live" && photos.length === 0) return setError("Add at least one photo before it goes live.");
 
-    const keptRows = hasOptions ? optionRows.filter((r) => r.name.trim()) : [];
-    const cleanOptions = hasOptions
+    const twoMode = hasOptions && secondLabel !== null;
+    let built: BuiltCombo[] = [];
+    if (twoMode) {
+      const check = checkCombos(combos, optionLabel, secondLabel!, price);
+      if (!check.ok) return setError(check.error);
+      built = check.combos;
+    }
+    const keptRows = hasOptions && !twoMode ? optionRows.filter((r) => r.name.trim()) : [];
+    const cleanOptions = hasOptions && !twoMode
       ? keptRows
           .map((r) => ({
             name: r.name.trim(),
@@ -131,7 +170,7 @@ export default function ProductForm({
               : {}),
           }))
       : [];
-    if (hasOptions) {
+    if (hasOptions && !twoMode) {
       const badPrice = keptRows.find((r) => r.price.trim() !== "" && !(Number(r.price) > 0));
       if (badPrice) return setError(`Give "${badPrice.name.trim()}" a price greater than £0, or leave it blank to use the product price.`);
       if (cleanOptions.length < 2) return setError(`Add at least two ${optionLabel.toLowerCase()} options, or switch options off.`);
@@ -165,7 +204,7 @@ export default function ProductForm({
       }
 
       // 2. Upload any new option photos and attach each option's photo.
-      const optionsToSave: { name: string; hex?: string; stock: number; price?: number; image?: string }[] = [];
+      const optionsToSave: { name: string; values?: string[]; hex?: string; stock: number; price?: number; image?: string }[] = [];
       for (const [i, r] of keptRows.entries()) {
         let image = r.imagePath;
         if (r.file) {
@@ -178,15 +217,39 @@ export default function ProductForm({
         }
         optionsToSave.push({ ...cleanOptions[i], ...(image ? { image } : {}) });
       }
+      // Two option types: upload each colour's photo once and use it for every size.
+      const uploadedPhotos = new Map<string, string>();
+      for (const c of built) {
+        const r = c.photoRow;
+        if (r.file && !uploadedPhotos.has(r.key)) {
+          const blob = await compressImage(r.file);
+          const path = `${slug}/${uniqueId()}.jpg`;
+          const { error: uploadError } = await supabase.storage
+            .from(BUCKET)
+            .upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
+          if (uploadError) throw new Error("A photo didn't upload. Check your connection and try again.");
+          uploadedPhotos.set(r.key, path);
+        }
+        const image = uploadedPhotos.get(r.key) ?? r.imagePath;
+        optionsToSave.push({
+          name: c.name,
+          values: c.values,
+          stock: c.stock,
+          ...(c.price !== undefined ? { price: c.price } : {}),
+          ...(c.hex ? { hex: c.hex } : {}),
+          ...(image ? { image } : {}),
+        });
+      }
 
       // 3. Save the product.
       const row = {
         name: name.trim(),
         price: Number(Number(price).toFixed(2)),
         // With options, the product's stock is the total of all its options.
-        stock: hasOptions ? cleanOptions.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
+        stock: hasOptions ? optionsToSave.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
         options: optionsToSave,
         option_label: optionLabel,
+        option_label_2: twoMode ? secondLabel : null,
         free_shipping: freeShipping,
         shipping_method_ids: limitMethods ? chosenMethods : [],
         payment_methods: paymentMethods,
@@ -227,10 +290,15 @@ export default function ProductForm({
           url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
         }))
       );
-      if (hasOptions) {
+      if (hasOptions && !twoMode) {
         setOptionRows(
-          keptRows.map((r, i) => ({ key: r.key, name: r.name, hex: r.hex, stock: r.stock, price: r.price, imagePath: optionsToSave[i].image }))
+          keptRows.map((r, i) => ({ key: r.key, name: r.name, hex: r.hex, hexTouched: true, stock: r.stock, price: r.price, imagePath: optionsToSave[i].image }))
         );
+      }
+      if (twoMode) {
+        const settle = <T extends { key: string; file?: File; preview?: string; imagePath?: string }>(r: T): T =>
+          uploadedPhotos.has(r.key) ? { ...r, imagePath: uploadedPhotos.get(r.key), file: undefined, preview: undefined } : r;
+        setCombos((s) => ({ ...s, a: s.a.map(settle), b: s.b.map(settle) }));
       }
       setLive(status === "live");
       setNotice(status === "live" ? "Saved. It's live in the shop." : "Saved. It's hidden from the shop.");
@@ -415,8 +483,9 @@ export default function ProductForm({
                       key={l}
                       type="button"
                       onClick={() => setOptionLabel(l)}
+                      disabled={twoOptions && l === secondLabel}
                       aria-pressed={optionLabel === l}
-                      className={`h-10 rounded-full border-[1.5px] px-4 text-sm font-semibold ${
+                      className={`h-10 rounded-full border-[1.5px] px-4 text-sm font-semibold disabled:opacity-40 ${
                         optionLabel === l ? "border-ink bg-ink text-cream" : "border-line-strong text-ink"
                       }`}
                     >
@@ -426,115 +495,137 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <ul className="flex flex-col gap-2.5">
-                {optionRows.map((r, i) => {
-                  const photo = r.preview ?? (r.imagePath ? productImageUrl(r.imagePath) : undefined);
-                  return (
-                    <li key={r.key} className="flex gap-3 rounded-2xl border border-line bg-paper p-2.5">
-                      {/* This option's own photo, shown when a customer picks it */}
-                      <div className="relative h-[100px] w-[80px] shrink-0 overflow-hidden rounded-xl border-[1.5px] border-dashed border-[#b3a591] bg-white">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />}
-                        <label
-                          className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 text-center text-[11px] font-semibold ${
-                            photo ? "text-transparent hover:bg-ink/30 hover:text-cream" : "text-muted"
-                          }`}
-                        >
-                          <CameraIcon size={18} />
-                          {photo ? "Replace" : "Photo"}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="sr-only"
-                            aria-label={`Photo for option ${i + 1}`}
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) pickOptionPhoto(r.key, f);
-                              e.target.value = "";
-                            }}
-                          />
-                        </label>
-                        {photo && (
-                          <button
-                            type="button"
-                            onClick={() => clearOptionPhoto(r.key)}
-                            aria-label={`Remove photo for option ${i + 1}`}
-                            className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-paper/90 text-ink"
-                          >
-                            <CloseIcon size={14} />
-                          </button>
-                        )}
-                      </div>
+              {twoOptions ? (
+                <OptionCombosEditor
+                  labelA={optionLabel}
+                  labelB={secondLabel!}
+                  onLabelB={setSecondLabel}
+                  onRemove={removeSecondOption}
+                  state={combos}
+                  onChange={setCombos}
+                  basePrice={price}
+                />
+              ) : (
+                <>
+                  <ul className="flex flex-col gap-2.5">
+                    {optionRows.map((r, i) => {
+                      const photo = r.preview ?? (r.imagePath ? productImageUrl(r.imagePath) : undefined);
+                      return (
+                        <li key={r.key} className="flex gap-3 rounded-2xl border border-line bg-paper p-2.5">
+                          {/* This option's own photo, shown when a customer picks it */}
+                          <div className="relative h-[100px] w-[80px] shrink-0 overflow-hidden rounded-xl border-[1.5px] border-dashed border-[#b3a591] bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                            <label
+                              className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 text-center text-[11px] font-semibold ${
+                                photo ? "text-transparent hover:bg-ink/30 hover:text-cream" : "text-muted"
+                              }`}
+                            >
+                              <CameraIcon size={18} />
+                              {photo ? "Replace" : "Photo"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="sr-only"
+                                aria-label={`Photo for option ${i + 1}`}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) pickOptionPhoto(r.key, f);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                            {photo && (
+                              <button
+                                type="button"
+                                onClick={() => clearOptionPhoto(r.key)}
+                                aria-label={`Remove photo for option ${i + 1}`}
+                                className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-paper/90 text-ink"
+                              >
+                                <CloseIcon size={14} />
+                              </button>
+                            )}
+                          </div>
 
-                      <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            value={r.name}
-                            onChange={(e) => updateRow(r.key, { name: e.target.value })}
-                            maxLength={30}
-                            aria-label={`${optionLabel} name`}
-                            placeholder={isColour ? (i === 0 ? "e.g. Black" : "e.g. Brown") : optionLabel === "Length" ? 'e.g. 22"' : optionLabel === "Size" ? "e.g. Medium" : "e.g. Curly"}
-                            className="h-11 min-w-0 flex-1 rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base text-ink"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeRow(r.key)}
-                            disabled={optionRows.length === 1}
-                            aria-label={`Remove option ${i + 1}`}
-                            className="flex h-11 w-9 shrink-0 items-center justify-center rounded-xl text-subtle hover:bg-sand disabled:opacity-30"
-                          >
-                            <CloseIcon size={18} />
-                          </button>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {isColour && (
-                            <input
-                              type="color"
-                              value={r.hex}
-                              onChange={(e) => updateRow(r.key, { hex: e.target.value })}
-                              aria-label={`Swatch colour for option ${i + 1}`}
-                              className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border-[1.5px] border-line-strong bg-white p-1"
-                            />
-                          )}
-                          <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
-                            Stock
-                            <input
-                              value={r.stock}
-                              onChange={(e) => updateRow(r.key, { stock: e.target.value })}
-                              type="number"
-                              min={0}
-                              placeholder="0"
-                              className="h-11 w-[84px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
-                            />
-                          </label>
-                          <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
-                            Price (£)
-                            <input
-                              value={r.price}
-                              onChange={(e) => updateRow(r.key, { price: e.target.value })}
-                              inputMode="decimal"
-                              aria-label={`Price for option ${i + 1}`}
-                              placeholder={Number(price) > 0 ? Number(price).toFixed(2) : "Same"}
-                              className="h-11 w-[96px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="text-[13px] text-subtle">
-                Add a photo to an option and the product page switches to it when a customer picks that option. Leave an option&apos;s price blank to use the product price above.
-              </p>
-              <button
-                type="button"
-                onClick={addRow}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-clay text-sm font-bold text-clay"
-              >
-                <PlusIcon size={16} />
-                Add another {optionLabel.toLowerCase()}
-              </button>
+                          <div className="flex min-w-0 flex-1 flex-col gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                value={r.name}
+                                onChange={(e) => renameRow(r, e.target.value)}
+                                maxLength={30}
+                                aria-label={`${optionLabel} name`}
+                                placeholder={isColour ? (i === 0 ? "e.g. Black" : "e.g. Brown") : optionLabel === "Length" ? 'e.g. 22"' : optionLabel === "Size" ? "e.g. Medium" : "e.g. Curly"}
+                                className="h-11 min-w-0 flex-1 rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base text-ink"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeRow(r.key)}
+                                disabled={optionRows.length === 1}
+                                aria-label={`Remove option ${i + 1}`}
+                                className="flex h-11 w-9 shrink-0 items-center justify-center rounded-xl text-subtle hover:bg-sand disabled:opacity-30"
+                              >
+                                <CloseIcon size={18} />
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {isColour && (
+                                <input
+                                  type="color"
+                                  value={r.hex}
+                                  onChange={(e) => updateRow(r.key, { hex: e.target.value, hexTouched: true })}
+                                  aria-label={`Swatch colour for option ${i + 1}`}
+                                  className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border-[1.5px] border-line-strong bg-white p-1"
+                                />
+                              )}
+                              <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
+                                Stock
+                                <input
+                                  value={r.stock}
+                                  onChange={(e) => updateRow(r.key, { stock: e.target.value })}
+                                  type="number"
+                                  min={0}
+                                  placeholder="0"
+                                  className="h-11 w-[84px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                                />
+                              </label>
+                              <label className="flex items-center gap-2 text-[13px] font-semibold text-subtle">
+                                Price (£)
+                                <input
+                                  value={r.price}
+                                  onChange={(e) => updateRow(r.key, { price: e.target.value })}
+                                  inputMode="decimal"
+                                  aria-label={`Price for option ${i + 1}`}
+                                  placeholder={Number(price) > 0 ? Number(price).toFixed(2) : "Same"}
+                                  className="h-11 w-[96px] rounded-xl border-[1.5px] border-line-strong bg-white px-3 text-base font-normal text-ink"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="text-[13px] text-subtle">
+                    Add a photo to an option and the product page switches to it when a customer picks that option. Leave an option&apos;s price blank to use the product price above.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={addRow}
+                    className="flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-clay text-sm font-bold text-clay"
+                  >
+                    <PlusIcon size={16} />
+                    Add another {optionLabel.toLowerCase()}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addSecondOption}
+                    className="flex h-11 items-center justify-center gap-2 rounded-xl border-[1.5px] border-line-strong text-sm font-bold text-ink hover:bg-sand"
+                  >
+                    <PlusIcon size={16} />
+                    Add a second option (for example size and colour)
+                  </button>
+                </>
+              )}
             </>
           )}
         </section>
@@ -614,7 +705,7 @@ export default function ProductForm({
             ))}
         </section>
 
-                <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-white p-4">
+        <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-white p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[15px] font-semibold">Payment</span>
             <span className="text-[13px] text-subtle">How customers can pay for this product at checkout.</span>
