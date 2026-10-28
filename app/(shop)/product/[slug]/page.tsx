@@ -5,7 +5,7 @@ import ProductCard from "@/components/shop/ProductCard";
 import ProductGallery from "@/components/shop/ProductGallery";
 import { GlobeIcon, ShieldIcon, TruckIcon } from "@/components/Icons";
 import { categoryName, gbp } from "@/lib/data";
-import { LOW_STOCK } from "@/lib/product-types";
+import { LOW_STOCK, priceRange } from "@/lib/product-types";
 import { getLiveProduct, getLiveProducts } from "@/lib/products";
 import { site } from "@/lib/site";
 
@@ -61,12 +61,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ...others.filter((p) => p.category !== product.category),
   ].slice(0, 4);
 
-    // Product photos first, then each option's own photo.
+  // Product photos first, then each option's own photo (once each, even when several sizes share it).
   const galleryImages = [
-    ...product.images,
-    ...product.options.map((o) => o.imageUrl).filter((u): u is string => Boolean(u) && !product.images.includes(u!)),
+    ...new Set([...product.images, ...product.options.map((o) => o.imageUrl).filter((u): u is string => Boolean(u))]),
   ];
-
+  const { min, max } = priceRange(product);
   // Product details in the format Google uses for shopping results (price, stock, photo).
   const structuredData = {
     "@context": "https://schema.org",
@@ -81,7 +80,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       "@type": "Offer",
       url: `${site.url}/product/${product.slug}`,
       priceCurrency: "GBP",
-      price: product.price.toFixed(2),
+      price: min.toFixed(2),
       availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
       seller: { "@type": "Organization", name: site.name },
@@ -112,8 +111,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </span>
               <h1 className="font-display text-[34px] leading-[1.08] tracking-[-0.015em] sm:text-[46px]">{product.name}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="text-[28px] font-semibold">{gbp(product.price)}</span>
+                <span className="text-[28px] font-semibold">
+                  {min !== max ? "From " : ""}
+                  {gbp(min)}
+                </span>
                 <StockLabel stock={product.stock} />
+                {product.bestSeller && (
+                  <span className="flex h-7 items-center rounded-full bg-ink px-3 text-[13px] font-semibold text-cream">Best seller</span>
+                )}
+                {product.sold > 0 && <span className="text-[15px] font-semibold text-subtle">{product.sold} sold</span>}
                 {product.freeShipping && (
                   <span className="flex h-7 items-center rounded-full bg-jade-soft px-3 text-[13px] font-semibold text-jade">Free delivery</span>
                 )}

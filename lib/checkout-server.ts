@@ -82,7 +82,7 @@ export async function resolveCheckout(
   const [productsRes, zonesRes, methodsRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, slug, name, price, stock, status, images, options, option_label, weight_grams, free_shipping, shipping_method_ids, payment_methods")
+      .select("id, slug, name, price, stock, status, images, options, option_label, option_label_2, weight_grams, free_shipping, shipping_method_ids, payment_methods")
       .in("id", [...new Set(wanted.map((w) => w.productId))]),
     supabase.from("shipping_zones").select(ZONE_COLUMNS),
     supabase.from("shipping_methods").select(METHOD_COLUMNS).eq("active", true),
@@ -114,7 +114,7 @@ export async function resolveCheckout(
       slug: p.slug,
       name: p.name,
       variant: option?.name ?? null,
-      variantLabel: option ? p.option_label || "Option" : null,
+      variantLabel: option ? (p.option_label_2 ? `${p.option_label || "Option"} / ${p.option_label_2}` : p.option_label || "Option") : null,
       quantity: w.quantity,
       unitPrice,
       imagePath: option?.image ?? p.images?.[0] ?? null,

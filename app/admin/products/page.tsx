@@ -1,10 +1,12 @@
 import Link from "next/link";
 import ProductList from "@/components/admin/ProductList";
+import ShopBadgesSetting from "@/components/admin/ShopBadgesSetting";
 import { PlusIcon } from "@/components/Icons";
 import { getAllProducts } from "@/lib/products";
+import { getBadgeSettings } from "@/lib/shop-signals";
 
 export default async function AdminProducts() {
-  const products = await getAllProducts();
+  const [products, badges] = await Promise.all([getAllProducts(), getBadgeSettings()]);
   const live = products.filter((p) => p.status === "live").length;
   const drafts = products.length - live;
 
@@ -26,6 +28,7 @@ export default async function AdminProducts() {
         </Link>
       </div>
       <ProductList products={products} />
+      <ShopBadgesSetting initial={badges} />
     </main>
   );
 }

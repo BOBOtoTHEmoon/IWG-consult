@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { gbp } from "@/lib/data";
 import { PAYMENT_METHODS, payPhrase, sharedMethods } from "@/lib/payment-methods";
-import { optionPrice, priceRange, type ShopProduct } from "@/lib/product-types";
+import { LOW_STOCK, optionGroups, optionPrice, priceRange, variantLabelOf, type ProductOption, type ShopProduct } from "@/lib/product-types";
 import { CheckIcon } from "../Icons";
 import { showProductPhoto } from "./ProductGallery";
 import { basketKey, useBasket } from "./BasketProvider";
@@ -14,17 +14,26 @@ import QuantityStepper from "./QuantityStepper";
 export default function ProductBuyBox({ product }: { product: ShopProduct }) {
   const router = useRouter();
   const { add, items, open } = useBasket();
-  const { options, optionLabel } = product;
+  const { options } = product;
   const hasOptions = options.length > 0;
 
-  // Start on the first option that's in stock.
-  const [choice, setChoice] = useState<string | undefined>(
-    hasOptions ? (options.find((o) => o.stock > 0) ?? options[0]).name : undefined
-  );
+  // One list of choices per option type: [Sizes] or [Sizes, Colours].
+  const groups = optionGroups(product);
+  const twoGroups = groups.length === 2;
+  const valuesOf = (o: ProductOption) => (twoGroups ? o.values! : [o.name]);
+  const findOption = (pick: string[]) => options.find((o) => valuesOf(o).every((v, i) => v === pick[i]));
+
+  // Start on the first choice that's in stock.
+  const [pick, setPick] = useState<string[]>(() => {
+    if (!hasOptions) return [];
+    const first = options.find((o) => o.stock > 0) ?? options[0];
+    return valuesOf(first);
+  });
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const selected = hasOptions ? options.find((o) => o.name === choice) : undefined;
+  const selected = hasOptions ? findOption(pick) : undefined;
+  const choice = selected?.name;
   const price = optionPrice(product, selected);
   const range = priceRange(product);
   const pricesVary = range.min !== range.max;
@@ -46,6 +55,38 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
     );
   }
 
+  // A choice can be picked if something with it is in stock. For the last option type,
+  // it has to be in stock together with what's already picked (e.g. Large in Black).
+  const available = (g: number, value: string) =>
+    options.some((o) => {
+      const vals = valuesOf(o);
+      if (o.stock <= 0 || vals[g] !== value) return false;
+      return g < groups.length - 1 || vals.every((v, i) => i === g || v === pick[i]);
+    });
+
+  function choose(g: number, value: string) {
+    let next = [...pick];
+    next[g] = value;
+    // Picked a size whose current colour is sold out: jump to the first colour that's in stock.
+    if (twoGroups && g === 0 && !(findOption(next)?.stock ?? 0)) {
+      const inStock = options.find((o) => o.stock > 0 && valuesOf(o)[0] === value);
+      if (inStock) next = valuesOf(inStock);
+    }
+    setPick(next);
+    setQty(1);
+    const photo = photoFor(g, value);
+    if (photo) showProductPhoto(photo);
+  }
+
+  // Swatches and photos belong to the Colour choices (or to the only list of choices).
+  const visualGroup = twoGroups ? Math.max(0, groups.findIndex((g) => g.label === "Colour")) : 0;
+  const lookFor = (g: number, value: string) => {
+    if (g !== visualGroup) return { hex: undefined, imageUrl: undefined };
+    const o = options.find((x) => valuesOf(x)[g] === value);
+    return { hex: o?.hex, imageUrl: o?.imageUrl };
+  };
+  const photoFor = (g: number, value: string) => lookFor(g, value).imageUrl;
+
   // Items paid only by PayPal and items paid only by card can't be in the same order.
   const basketMethods = sharedMethods(items.map((i) => i.payments ?? [...PAYMENT_METHODS]));
   const payConflict = items.length > 0 && sharedMethods([basketMethods, product.paymentMethods]).length === 0;
@@ -61,7 +102,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
         slug: product.slug,
         name: product.name,
         variant: choice,
-        variantLabel: hasOptions ? optionLabel : undefined,
+        variantLabel: hasOptions ? variantLabelOf(product) : undefined,
         price,
         image: selected?.imageUrl ?? product.images[0],
         tint: product.tint,
@@ -75,49 +116,47 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {hasOptions && (
-        <fieldset className="flex flex-col gap-3">
-          <legend className="mb-3 text-[15px] font-semibold">
-            {optionLabel}: <span className="font-normal text-muted">{choice}</span>
-            {selected && selected.stock > 0 && selected.stock <= 3 && (
-              <span className="ml-2 text-sm font-semibold text-clay">Only {selected.stock} left</span>
-            )}
-          </legend>
-          <div className="flex flex-wrap gap-2.5">
-            {options.map((o) => {
-              const soldOut = o.stock <= 0;
-              const on = choice === o.name;
-              return (
-                <button
-                  key={o.name}
-                  type="button"
-                  aria-pressed={on}
-                  disabled={soldOut}
-                  onClick={() => {
-                    setChoice(o.name);
-                    setQty(1);
-                    if (o.imageUrl) showProductPhoto(o.imageUrl);
-                  }}
-                  aria-label={soldOut ? `${o.name}, sold out` : o.name}
-                  className={`flex h-11 items-center gap-2.5 rounded-full bg-paper text-sm font-medium transition-colors ${
-                    o.imageUrl || o.hex ? "pl-1.5 pr-4" : "px-4"
-                  } ${on ? "border-2 border-ink" : "border-[1.5px] border-line-strong hover:border-ink"} ${
-                    soldOut ? "cursor-not-allowed text-subtle line-through opacity-50 hover:border-line-strong" : ""
-                  }`}
-                >
-                  {o.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.imageUrl} alt="" className="h-8 w-8 rounded-full border border-black/10 object-cover" />
-                  ) : (
-                    o.hex && <span className="h-7 w-7 rounded-full border border-black/10" style={{ background: o.hex }} />
-                  )}
-                  {o.name}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-      )}
+      {hasOptions &&
+        groups.map((group, g) => (
+          <fieldset key={group.label} className="flex flex-col gap-3">
+            <legend className="mb-3 text-[15px] font-semibold">
+              {group.label}: <span className="font-normal text-muted">{pick[g]}</span>
+              {g === groups.length - 1 && selected && selected.stock > 0 && selected.stock <= LOW_STOCK && (
+                <span className="ml-2 text-sm font-semibold text-clay">Only {selected.stock} left</span>
+              )}
+            </legend>
+            <div className="flex flex-wrap gap-2.5">
+              {group.values.map((value) => {
+                const soldOut = !available(g, value);
+                const on = pick[g] === value;
+                const { hex, imageUrl } = lookFor(g, value);
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={on}
+                    disabled={soldOut}
+                    onClick={() => choose(g, value)}
+                    aria-label={soldOut ? `${value}, sold out` : value}
+                    className={`flex h-11 items-center gap-2.5 rounded-full bg-paper text-sm font-medium transition-colors ${
+                      imageUrl || hex ? "pl-1.5 pr-4" : "px-4"
+                    } ${on ? "border-2 border-ink" : "border-[1.5px] border-line-strong hover:border-ink"} ${
+                      soldOut ? "cursor-not-allowed text-subtle line-through opacity-50 hover:border-line-strong" : ""
+                    }`}
+                  >
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={imageUrl} alt="" className="h-8 w-8 rounded-full border border-black/10 object-cover" />
+                    ) : (
+                      hex && <span className="h-7 w-7 rounded-full border border-black/10" style={{ background: hex }} />
+                    )}
+                    {value}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        ))}
 
       {pricesVary && <p className="text-[28px] font-semibold">{gbp(price)}</p>}
 
@@ -131,6 +170,10 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
           <button onClick={open} className="flex h-12 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-cream">
             View basket
           </button>
+        </div>
+      ) : !selected && hasOptions ? (
+        <div className="rounded-[18px] border border-line bg-paper p-5 text-[15px] text-muted">
+          This combination isn&apos;t available. Please choose another.
         </div>
       ) : canAdd === 0 ? (
         <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">

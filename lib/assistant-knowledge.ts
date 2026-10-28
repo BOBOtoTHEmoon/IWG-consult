@@ -6,6 +6,7 @@ import { getShippingSetup } from "@/lib/shipping";
 import { deliveryTime, kg } from "@/lib/shipping-types";
 import { countryName } from "@/lib/countries";
 import { site } from "@/lib/site";
+import { variantLabelOf } from "@/lib/product-types";
 
 // The pages the assistant reads, so its answers always match the live website.
 const PAGES = [
@@ -76,7 +77,7 @@ async function productsText() {
           ? `${p.stock} in stock`
           : "sold out";
       const desc = p.description ? ` Description: ${p.description.replace(/\s+/g, " ").slice(0, 280)}` : "";
-      return `- ${p.name} | ${gbp(p.price)} | ${categoryName(p.category)} | ${p.options.length ? `${p.optionLabel} options: ` : ""}${stock}${
+      return `- ${p.name} | ${gbp(p.price)} | ${categoryName(p.category)} | ${p.options.length ? `${variantLabelOf(p)} options: ` : ""}${stock}${
         p.freeShipping ? " | free delivery" : ""
       } | link: /product/${p.slug}.${desc}`;
     })
