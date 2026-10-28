@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getStaff } from "@/lib/auth";
+import { toPaymentMethods } from "@/lib/payment-methods";
 import { getSourcingRequestByNumber } from "@/lib/sourcing";
 import { sendSourcingQuote } from "@/lib/sourcing-emails";
 import { markSourcingFeePaid } from "@/lib/sourcing-payments";
@@ -12,7 +13,22 @@ type Result = { ok: true; message: string } | { ok: false; error: string };
 
 const done = () => revalidatePath("/admin", "layout");
 
-// For payments taken outside PayPal (e.g. bank transfer). Sends the same emails as a PayPal payment.
+// How customers can pay the £50 sourcing fee: PayPal, Stripe or both.
+export async function saveSourcingPaymentMethods(methods: string[]): Promise<Result> {
+  if (!(await getStaff())) return { ok: false, error: "Please sign in again." };
+  const clean = toPaymentMethods(methods, []);
+  if (clean.length === 0) return { ok: false, error: "Choose at least one way to pay." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").update({ sourcing_payment_methods: clean }).eq("id", 1);
+  if (error) {
+    console.error("saveSourcingPaymentMethods:", error.message);
+    return { ok: false, error: "We couldn't save that. Please try again." };
+  }
+  done();
+  return { ok: true, message: "Saved." };
+}
+
+// For payments taken outside the website (e.g. bank transfer). Sends the same emails as an online payment.
 export async function markFeePaid(requestId: string): Promise<Result> {
   const staff = await getStaff();
   if (!staff) return { ok: false, error: "Please sign in again." };
@@ -67,7 +83,7 @@ export async function setSourcingStatus(number: string, status: SourcingStatus):
   return error ? { ok: false, error: "We couldn't update the request. Please try again." } : { ok: true, message: "Updated." };
 }
 
-// After refunding the £50 in PayPal, Goody records it here.
+// After refunding the £50 in PayPal or Stripe, Goody records it here.
 export async function markFeeRefunded(number: string): Promise<Result> {
   if (!(await getStaff())) return { ok: false, error: "Please sign in again." };
   const supabase = await createClient();

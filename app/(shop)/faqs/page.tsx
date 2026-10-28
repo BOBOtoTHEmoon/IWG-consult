@@ -11,8 +11,8 @@ const groups: { title: string; items: QA[] }[] = [
   {
     title: "Orders and payment",
     items: [
-      { q: "Do I need an account to order?", a: "No. You check out as a guest with your email and delivery address, and pay with PayPal." },
-      { q: "How can I pay?", a: "Through PayPal, using your PayPal balance or a debit or credit card. You don't need a PayPal account to pay by card." },
+      { q: "Do I need an account to order?", a: "No. You check out as a guest with your email and delivery address, and pay with PayPal or by card." },
+      { q: "How can I pay?", a: "With PayPal (your PayPal balance, or a card without a PayPal account) or by debit or credit card through Stripe. Checkout shows which ways are available for the items in your basket." },
       { q: "Will I get a confirmation?", a: "Yes. You get an email when your order is placed, and another when it's posted." },
     ],
   },

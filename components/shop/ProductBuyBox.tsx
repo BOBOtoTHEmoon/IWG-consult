@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { gbp } from "@/lib/data";
+import { PAYMENT_METHODS, payPhrase, sharedMethods } from "@/lib/payment-methods";
 import { optionPrice, priceRange, type ShopProduct } from "@/lib/product-types";
 import { CheckIcon } from "../Icons";
 import { showProductPhoto } from "./ProductGallery";
@@ -45,6 +46,10 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
     );
   }
 
+  // Items paid only by PayPal and items paid only by card can't be in the same order.
+  const basketMethods = sharedMethods(items.map((i) => i.payments ?? [...PAYMENT_METHODS]));
+  const payConflict = items.length > 0 && sharedMethods([basketMethods, product.paymentMethods]).length === 0;
+
   // Don't let them add more than is left, counting what's already in the basket.
   const inBasket = items.find((i) => i.key === basketKey(product.id, choice))?.qty ?? 0;
   const canAdd = Math.max(0, stock - inBasket);
@@ -58,9 +63,10 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
         variant: choice,
         variantLabel: hasOptions ? optionLabel : undefined,
         price,
-                image: selected?.imageUrl ?? product.images[0],
+        image: selected?.imageUrl ?? product.images[0],
         tint: product.tint,
         stock,
+        payments: product.paymentMethods,
       },
       Math.min(qty, canAdd)
     );
@@ -87,7 +93,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
                   type="button"
                   aria-pressed={on}
                   disabled={soldOut}
-                                    onClick={() => {
+                  onClick={() => {
                     setChoice(o.name);
                     setQty(1);
                     if (o.imageUrl) showProductPhoto(o.imageUrl);
@@ -113,9 +119,20 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
         </fieldset>
       )}
 
-{pricesVary && <p className="text-[28px] font-semibold">{gbp(price)}</p>}
+      {pricesVary && <p className="text-[28px] font-semibold">{gbp(price)}</p>}
 
-      {canAdd === 0 ? (
+      {payConflict ? (
+        <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
+          <span className="text-[15px] font-semibold">This can&apos;t go in the same order as your basket</span>
+          <span className="text-[15px] leading-relaxed text-muted">
+            {product.name} can be paid {payPhrase(product.paymentMethods)}, but your basket can be paid {payPhrase(basketMethods)}.
+            Please check out your basket first, then come back for this.
+          </span>
+          <button onClick={open} className="flex h-12 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-cream">
+            View basket
+          </button>
+        </div>
+      ) : canAdd === 0 ? (
         <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
           <span className="text-[15px] font-semibold">
             You have all {stock} {choice ? `in ${choice} ` : ""}in your basket

@@ -40,8 +40,8 @@ export default function TermsPage() {
 
       <h2>4. Payment</h2>
       <p>
-        Payments are taken securely through PayPal. You can pay with a PayPal account or with a debit or credit
-        card through PayPal without an account. We never see or store your card details.
+        Payments are taken securely through PayPal or Stripe. Depending on the items, you can pay with a PayPal account
+        or by debit or credit card. We never see or store your card details.
       </p>
 
       <h2>5. Delivery</h2>

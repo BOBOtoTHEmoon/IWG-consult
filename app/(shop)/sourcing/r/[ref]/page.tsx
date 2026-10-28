@@ -1,19 +1,34 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CheckIcon, InfoIcon, MailIcon, WhatsappIcon } from "@/components/Icons";
+import { getSourcingPaymentMethods } from "@/lib/payment-settings";
 import { site } from "@/lib/site";
 import { getSourcingRequestByRef } from "@/lib/sourcing";
 import { whatsappLink, whatsappMessage } from "@/lib/sourcing-types";
-   import SourcingPayButton from "@/components/shop/SourcingPayButton";
+import { confirmSourcingReturn } from "@/lib/stripe-fulfil";
+import SourcingPayButton from "@/components/shop/SourcingPayButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your sourcing request | Import with Goody", robots: { index: false } };
 
 // The customer's private page for one request. Before payment it's the payment step;
 // after payment it's the confirmation, with the WhatsApp message ready to send.
-export default async function SourcingRequestStatus({ params }: { params: Promise<{ ref: string }> }) {
+export default async function SourcingRequestStatus({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ref: string }>;
+  searchParams: Promise<{ session_id?: string }>;
+}) {
   const { ref } = await params;
-  const r = await getSourcingRequestByRef(ref);
+  const { session_id } = await searchParams;
+  // Back from paying by card: record the payment, then reload the page without Stripe's id
+  // so it shows the latest status (and the link stays clean if they bookmark or share it).
+  if (session_id) {
+    await confirmSourcingReturn(session_id, ref);
+    redirect(`/sourcing/r/${ref}`);
+  }
+  const [r, paymentMethods] = await Promise.all([getSourcingRequestByRef(ref), getSourcingPaymentMethods()]);
   if (!r) notFound();
 
   const paid = r.feeStatus !== "unpaid";
@@ -72,7 +87,7 @@ export default async function SourcingRequestStatus({ params }: { params: Promis
             Your list is saved. Goody starts sourcing as soon as the £50 commitment fee is paid, and it&apos;s refunded when you
             go ahead with the purchase.
           </p>
-                     <SourcingPayButton refId={r.publicRef} />
+                 <SourcingPayButton refId={r.publicRef} methods={paymentMethods} />
           <p className="flex items-start gap-2.5 text-sm leading-relaxed text-subtle">
             <InfoIcon size={18} className="mt-0.5 shrink-0" />
             Keep this page open, or come back to it from the same link. Once you&apos;ve paid, you&apos;ll see your

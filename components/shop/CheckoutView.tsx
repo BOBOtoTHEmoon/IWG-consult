@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-   import { useRouter } from "next/navigation";
-   import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { COUNTRIES, countryName } from "@/lib/countries";
 import { gbp } from "@/lib/data";
+import { PAYMENT_METHODS, payPhrase, sharedMethods, toPaymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 import { productImageUrl } from "@/lib/product-types";
 import {
   METHOD_COLUMNS,
@@ -21,8 +22,9 @@ import { createClient } from "@/lib/supabase/client";
 import { BagIcon, InfoIcon, TruckIcon } from "../Icons";
 import ProductImage from "../ProductImage";
 import { useBasket, type BasketItem } from "./BasketProvider";
-   import PayPalPay from "./PayPalPay";
+import PayPalPay from "./PayPalPay";
 import QuantityStepper from "./QuantityStepper";
+import StripePay from "./StripePay";
 
 const input = "h-[52px] rounded-xl border-[1.5px] border-line-strong bg-white px-4 text-base font-normal";
 const label = "flex flex-col gap-2 text-sm font-semibold";
@@ -32,9 +34,9 @@ const card = "flex flex-col gap-4 rounded-[20px] border border-line bg-paper p-5
 type ProductDelivery = { weightGrams: number | null; freeShipping: boolean; allowedMethodIds: string[] };
 
 export default function CheckoutView() {
-   const router = useRouter();
-   const formRef = useRef<HTMLFormElement>(null);
-   const { items, subtotal, ready, setQty, remove, replace, clear } = useBasket();
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const { items, subtotal, ready, setQty, remove, replace, clear } = useBasket();
   const [checked, setChecked] = useState(false);
   const [changes, setChanges] = useState<string[]>([]);
   const [country, setCountry] = useState("GB");
@@ -43,6 +45,13 @@ export default function CheckoutView() {
   const [productDelivery, setProductDelivery] = useState<Map<string, ProductDelivery>>(new Map());
   const [deliveryLoaded, setDeliveryLoaded] = useState(false);
   const [methodId, setMethodId] = useState("");
+  const [productPayments, setProductPayments] = useState<Map<string, PaymentMethod[]>>(new Map());
+  const [cardCancelled, setCardCancelled] = useState(false);
+
+  // Back from Stripe's page without paying.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("payment") === "cancelled") setCardCancelled(true);
+  }, []);
 
   // Check the basket against live stock and prices, and load the delivery settings.
   useEffect(() => {
@@ -56,7 +65,7 @@ export default function CheckoutView() {
       const [productsRes, zonesRes, methodsRes] = await Promise.all([
         supabase
           .from("products")
-          .select("id, name, price, stock, images, options, weight_grams, free_shipping, shipping_method_ids")
+          .select("id, name, price, stock, images, options, weight_grams, free_shipping, shipping_method_ids, payment_methods")
           .eq("status", "live")
           .in("id", ids),
         supabase.from("shipping_zones").select(ZONE_COLUMNS).order("sort_order"),
@@ -78,6 +87,8 @@ export default function CheckoutView() {
           ])
         )
       );
+
+      setProductPayments(new Map(data.map((p) => [p.id, toPaymentMethods(p.payment_methods)])));
 
       const live = new Map(data.map((p) => [p.id, p]));
       const notes: string[] = [];
@@ -150,30 +161,34 @@ export default function CheckoutView() {
     if (selected && selected.method.id !== methodId) setMethodId(selected.method.id);
   }, [selected, methodId]);
 
-     // Everything the server needs to work out the order. Returns null if the form isn't complete.
-   function checkoutPayload() {
-     const form = formRef.current;
-     if (!form || !selected) return null;
-     if (!form.reportValidity()) return null;
-     const f = new FormData(form);
-     const get = (k: string) => String(f.get(k) ?? "");
-     return {
-       items: items.map((i) => ({ productId: i.productId, variant: i.variant, quantity: i.qty })),
-       methodId: selected.method.id,
-       newsletter: f.get("newsletter") === "on",
-       customer: {
-         email: get("email"),
-         firstName: get("firstName"),
-         lastName: get("lastName"),
-         phone: get("phone"),
-         address1: get("address1"),
-         address2: get("address2"),
-         city: get("city"),
-         postcode: get("postcode"),
-         country,
-       },
-     };
-   }
+  // Everything the server needs to work out the order. Returns null if the form isn't complete.
+  function checkoutPayload() {
+    const form = formRef.current;
+    if (!form || !selected) return null;
+    if (!form.reportValidity()) return null;
+    const f = new FormData(form);
+    const get = (k: string) => String(f.get(k) ?? "");
+    return {
+      items: items.map((i) => ({ productId: i.productId, variant: i.variant, quantity: i.qty })),
+      methodId: selected.method.id,
+      newsletter: f.get("newsletter") === "on",
+      customer: {
+        email: get("email"),
+        firstName: get("firstName"),
+        lastName: get("lastName"),
+        phone: get("phone"),
+        address1: get("address1"),
+        address2: get("address2"),
+        city: get("city"),
+        postcode: get("postcode"),
+        country,
+      },
+    };
+  }
+
+  // How this basket can be paid: only the ways every item accepts.
+  const paymentsFor = (i: BasketItem) => productPayments.get(i.productId) ?? i.payments ?? [...PAYMENT_METHODS];
+  const payWith = sharedMethods(items.map(paymentsFor));
 
   const deliveryPrice = selected?.price ?? 0;
   const total = subtotal + deliveryPrice;
@@ -215,9 +230,9 @@ export default function CheckoutView() {
   }
 
   return (
-          <form
-         ref={formRef}
-         onSubmit={(e) => e.preventDefault()}
+    <form
+      ref={formRef}
+      onSubmit={(e) => e.preventDefault()}
       className="mx-auto flex max-w-[1440px] flex-col-reverse items-start gap-8 px-5 pb-20 pt-8 sm:px-10 lg:flex-row lg:gap-12 lg:px-20 lg:pt-12"
     >
       <div className="flex w-full flex-1 flex-col gap-5">
@@ -326,21 +341,59 @@ export default function CheckoutView() {
 
         <section className={card}>
           <h2 className="text-xl font-bold">Payment</h2>
-          <p className="text-[15px] leading-relaxed text-muted">
-            You will finish paying securely with PayPal. Use your PayPal balance, or pay by debit or credit card without an account.
-          </p>
-                      <PayPalPay
-               createUrl="/api/checkout/create"
-               captureUrl="/api/checkout/capture"
-               createBody={checkoutPayload}
-               captureBody={(paypalOrderId) => ({ paypalOrderId })}
-               onPaid={(result) => {
-                 clear();
-                 router.push(result.ref ? `/order/${result.ref}` : "/shop");
-               }}
-               disabled={!selected}
-               refreshKey={[selected?.method.id, total, country]}
-             />
+          {payWith.length === 0 ? (
+            <div role="alert" className="flex flex-col gap-2 rounded-[14px] bg-[#f1e6c8] p-4 text-sm leading-relaxed text-[#6e5316]">
+              <p className="font-semibold">These items can&apos;t be paid for in one order.</p>
+              <ul className="flex flex-col gap-1">
+                {items.map((i) => (
+                  <li key={i.key}>
+                    {i.name}
+                    {i.variant ? ` (${i.variant})` : ""}: paid {payPhrase(paymentsFor(i))}
+                  </li>
+                ))}
+              </ul>
+              <p>Please remove the items of one kind and check out, then come back for the rest.</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-[15px] leading-relaxed text-muted">
+                {payWith.length === 2
+                  ? "Pay by debit or credit card on Stripe's secure page, or with PayPal (your PayPal balance, or a card without an account)."
+                  : payWith[0] === "stripe"
+                    ? "You will pay by debit or credit card on Stripe's secure payment page. Apple Pay and Google Pay work too where available."
+                    : "You will finish paying securely with PayPal. Use your PayPal balance, or pay by debit or credit card without an account."}
+              </p>
+              {cardCancelled && (
+                <p role="status" className="rounded-[14px] bg-[#f1e6c8] px-4 py-3 text-sm font-semibold text-[#6e5316]">
+                  Card payment cancelled. You haven&apos;t been charged.
+                </p>
+              )}
+              {payWith.includes("stripe") && (
+                <StripePay createUrl="/api/checkout/stripe" createBody={checkoutPayload} disabled={!selected} label={`Pay ${gbp(total)} by card`} />
+              )}
+              {payWith.length === 2 && (
+                <div className="flex items-center gap-3 text-sm text-subtle">
+                  <span className="h-px flex-1 bg-line" />
+                  or
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+              )}
+              {payWith.includes("paypal") && (
+                <PayPalPay
+                  createUrl="/api/checkout/create"
+                  captureUrl="/api/checkout/capture"
+                  createBody={checkoutPayload}
+                  captureBody={(paypalOrderId) => ({ paypalOrderId })}
+                  onPaid={(result) => {
+                    clear();
+                    router.push(result.ref ? `/order/${result.ref}` : "/shop");
+                  }}
+                  disabled={!selected}
+                  refreshKey={[selected?.method.id, total, country]}
+                />
+              )}
+            </>
+          )}
           <span className="text-center text-[13px] text-subtle">
             By placing your order you agree to our{" "}
             <Link href="/terms" className="underline">terms</Link> and{" "}

@@ -98,7 +98,7 @@ export default function Footer() {
           <span>
             © {new Date().getFullYear()} {site.legalName}
           </span>
-          <span>Payments secured by PayPal</span>
+          <span>Payments secured by PayPal and Stripe</span>
         </div>
       </div>
     </footer>

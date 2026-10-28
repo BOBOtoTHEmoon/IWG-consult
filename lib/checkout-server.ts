@@ -1,5 +1,6 @@
 import "server-only";
 import { countryName } from "@/lib/countries";
+import { toPaymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 import { METHOD_COLUMNS, ZONE_COLUMNS, quoteDelivery, toMethod, toZone, zoneForCountry } from "@/lib/shipping-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -40,6 +41,7 @@ export type ResolvedCheckout = {
   shipping: number;
   total: number;
   newsletter: boolean;
+  provider?: PaymentMethod; // how they're paying (older saved checkouts don't have this)
 };
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -47,7 +49,10 @@ const pennies = (n: number) => Math.round(n * 100);
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 // Works out the real order from the database: live products, current prices, stock, and delivery.
-export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkout: ResolvedCheckout } | { ok: false; error: string }> {
+export async function resolveCheckout(
+  raw: unknown,
+  provider: PaymentMethod = "paypal"
+): Promise<{ ok: true; checkout: ResolvedCheckout } | { ok: false; error: string }> {
   const input = (raw ?? {}) as Partial<CheckoutInput>;
   const c = (input.customer ?? {}) as Partial<CheckoutInput["customer"]>;
   const customer = {
@@ -77,7 +82,7 @@ export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkou
   const [productsRes, zonesRes, methodsRes] = await Promise.all([
     supabase
       .from("products")
-      .select("id, slug, name, price, stock, status, images, options, option_label, weight_grams, free_shipping, shipping_method_ids")
+      .select("id, slug, name, price, stock, status, images, options, option_label, weight_grams, free_shipping, shipping_method_ids, payment_methods")
       .in("id", [...new Set(wanted.map((w) => w.productId))]),
     supabase.from("shipping_zones").select(ZONE_COLUMNS),
     supabase.from("shipping_methods").select(METHOD_COLUMNS).eq("active", true),
@@ -91,7 +96,11 @@ export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkou
   for (const w of wanted) {
     const p = products.get(w.productId);
     if (!p || p.status !== "live") return { ok: false, error: "Something in your basket is no longer available. Please check your basket." };
-  const options = (p.options ?? []) as { name: string; stock?: number; image?: string; price?: number | string | null }[];
+    // Each product says how it can be paid for (PayPal, Stripe or both).
+    if (!toPaymentMethods(p.payment_methods).includes(provider)) {
+      return { ok: false, error: `${p.name} can't be paid ${provider === "stripe" ? "by card" : "with PayPal"}. Please choose another way to pay.` };
+    }
+    const options = (p.options ?? []) as { name: string; stock?: number; image?: string; price?: number | string | null }[];
     const option = w.variant ? options.find((o) => o.name === w.variant) : undefined;
     if (options.length > 0 && !option) return { ok: false, error: `Please choose an option for ${p.name}.` };
     const stock = option ? (option.stock ?? p.stock) : p.stock;
@@ -139,6 +148,7 @@ export async function resolveCheckout(raw: unknown): Promise<{ ok: true; checkou
       shipping,
       total: (pennies(subtotal) + pennies(shipping)) / 100,
       newsletter: Boolean(input.newsletter),
+      provider,
     },
   };
 }
