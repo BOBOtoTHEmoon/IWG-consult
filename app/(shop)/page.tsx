@@ -100,7 +100,7 @@ export default async function HomePage() {
           <div className="animate-fade-up hidden flex-wrap gap-7 border-t border-line pt-5 text-sm text-muted sm:flex" style={delay(320)}>
             <span className="flex items-center gap-2"><CheckIcon size={18} className="text-jade" />Checked before listing</span>
             <span className="flex items-center gap-2"><TruckIcon size={18} className="text-jade" />Royal Mail delivery</span>
-            <span className="flex items-center gap-2"><ShieldIcon size={18} className="text-jade" />Secure PayPal checkout</span>
+            <span className="flex items-center gap-2"><ShieldIcon size={18} className="text-jade" />Secure checkout</span>
           </div>
         </div>
 

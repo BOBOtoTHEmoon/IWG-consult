@@ -59,7 +59,7 @@ export default function ReturnsPage() {
 
       <h2>Refunds</h2>
       <p>
-        Refunds go back to your original payment method through PayPal, within 14 days of us receiving your return
+        Refunds go back to your original payment method through PayPal or Stripe, within 14 days of us receiving your return
         or proof that you sent it, whichever is sooner.
       </p>
 

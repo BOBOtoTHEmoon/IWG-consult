@@ -1,4 +1,5 @@
 // Shared product types and helpers. Safe to use in both server and client code.
+import { toPaymentMethods, type PaymentMethod } from "@/lib/payment-methods";
 
 export type ProductStatus = "draft" | "live";
 
@@ -7,7 +8,7 @@ export type ProductOption = {
   name: string;
   hex?: string;
   stock: number;
-  price?: number; 
+  price?: number;
   image?: string;
   imageUrl?: string;
 };
@@ -31,8 +32,9 @@ export type ShopProduct = {
   tint: string;
   optionLabel: string; // "Colour", "Size", "Length" or "Style"
   options: ProductOption[]; // empty when the product has no options
-    freeShipping: boolean;
+  freeShipping: boolean;
   shippingMethodIds: string[]; // empty = every delivery option
+  paymentMethods: PaymentMethod[]; // how customers can pay for it at checkout
   imagePaths: string[]; // paths inside the product-images bucket
   images: string[]; // public URLs for those paths
   createdAt: string;
@@ -53,14 +55,15 @@ export type ProductRow = {
   tint: string;
   option_label: string | null;
   options: { name: string; hex?: string; stock?: number; price?: number | string | null; image?: string }[] | null;
-    free_shipping: boolean | null;
+  free_shipping: boolean | null;
   shipping_method_ids: string[] | null;
+  payment_methods: string[] | null;
   images: string[] | null;
   created_at: string;
 };
 
 export const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, options, free_shipping, shipping_method_ids, images, created_at";
+  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, options, free_shipping, shipping_method_ids, payment_methods, images, created_at";
 export const productImageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
 
@@ -80,7 +83,7 @@ export function toProduct(row: ProductRow): ShopProduct {
     tint: row.tint,
     optionLabel: row.option_label || "Colour",
     // Older rows may have options without stock; treat those as sharing the product's stock.
-       options: (row.options ?? []).map((o) => ({
+    options: (row.options ?? []).map((o) => ({
       name: o.name,
       hex: o.hex,
       stock: o.stock ?? row.stock,
@@ -88,8 +91,9 @@ export function toProduct(row: ProductRow): ShopProduct {
       image: o.image,
       imageUrl: o.image ? productImageUrl(o.image) : undefined,
     })),
-        freeShipping: row.free_shipping ?? false,
+    freeShipping: row.free_shipping ?? false,
     shippingMethodIds: row.shipping_method_ids ?? [],
+    paymentMethods: toPaymentMethods(row.payment_methods),
     imagePaths,
     images: imagePaths.map(productImageUrl),
     createdAt: row.created_at,

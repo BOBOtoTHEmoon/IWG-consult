@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { refreshShop } from "@/app/admin/actions";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
+import { PAYMENT_CHOICES, sameMethods, type PaymentMethod } from "@/lib/payment-methods";
 import { OPTION_LABELS, productImageUrl, slugify, type ShopProduct } from "@/lib/product-types";
 import type { ShippingMethod, ShippingZone } from "@/lib/shipping-types";
 import { createClient } from "@/lib/supabase/client";
@@ -51,6 +52,7 @@ export default function ProductForm({
   const [freeShipping, setFreeShipping] = useState(product?.freeShipping ?? false);
   const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
   const [methodIds, setMethodIds] = useState<string[]>(product?.shippingMethodIds ?? []);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(product?.paymentMethods ?? ["paypal"]);
   const [photos, setPhotos] = useState<Photo[]>(
     product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
@@ -187,6 +189,7 @@ export default function ProductForm({
         option_label: optionLabel,
         free_shipping: freeShipping,
         shipping_method_ids: limitMethods ? chosenMethods : [],
+        payment_methods: paymentMethods,
         category,
         weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
         description: description.trim(),
@@ -609,6 +612,36 @@ export default function ProductForm({
                 <p className="text-[13px] text-subtle">Customers in a zone with none of these ticked won&apos;t be able to buy this product.</p>
               </div>
             ))}
+        </section>
+
+                <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-white p-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">Payment</span>
+            <span className="text-[13px] text-subtle">How customers can pay for this product at checkout.</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {PAYMENT_CHOICES.map((choice) => {
+              const on = sameMethods(paymentMethods, choice.value);
+              return (
+                <button
+                  key={choice.label}
+                  type="button"
+                  onClick={() => setPaymentMethods(choice.value)}
+                  aria-pressed={on}
+                  className={`rounded-xl border-[1.5px] px-2 py-3 text-[15px] font-semibold ${on ? "border-ink bg-paper" : "border-line-strong"}`}
+                >
+                  {choice.label}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[13px] text-subtle">
+            {paymentMethods.length === 2
+              ? "Customers choose PayPal or card at checkout."
+              : paymentMethods[0] === "stripe"
+                ? "Customers pay by card through Stripe. It can't be bought in the same order as a PayPal-only product."
+                : "Customers pay with PayPal (or a card through PayPal). It can't be bought in the same order as a Stripe-only product."}
+          </span>
         </section>
 
         <label className={label}>

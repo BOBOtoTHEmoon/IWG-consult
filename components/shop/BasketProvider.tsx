@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { PaymentMethod } from "@/lib/payment-methods";
 
 export type BasketItem = {
   key: string; // productId plus option, so black and brown of one wig are separate lines
@@ -13,6 +14,7 @@ export type BasketItem = {
   image?: string;
   tint: string;
   stock: number; // stock when it was added, refreshed at checkout
+  payments?: PaymentMethod[]; // how it can be paid; older saved baskets don't have this
   qty: number;
 };
 

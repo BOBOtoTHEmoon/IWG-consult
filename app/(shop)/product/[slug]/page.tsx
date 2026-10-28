@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 const assurances = [
   { icon: TruckIcon, title: "UK delivery with Royal Mail", body: "Rates are shown at checkout based on your address." },
   { icon: GlobeIcon, title: "International delivery available", body: "We ship worldwide from the UK." },
-  { icon: ShieldIcon, title: "Secure checkout", body: "Pay with PayPal, or a debit or credit card through PayPal." },
+  { icon: ShieldIcon, title: "Secure checkout", body: "Pay with PayPal, or by debit or credit card." },
 ];
 
 function StockLabel({ stock }: { stock: number }) {

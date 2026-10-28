@@ -26,7 +26,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>When you place an order:</strong> your name, email address, phone number, delivery address and
-          what you ordered. Payments are handled by PayPal. We never see or store your card details.
+          what you ordered. Payments are handled by PayPal or Stripe. We never see or store your card details.
         </li>
         <li>
           <strong>When you send a sourcing request:</strong> your contact details, delivery country, the list of
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
       <h2>Who we share it with</h2>
       <p>We only share what each provider needs to do its job:</p>
       <ul>
-        <li><strong>PayPal</strong>, to take payments.</li>
+        <li><strong>PayPal</strong> and <strong>Stripe</strong>, to take payments.</li>
         <li><strong>Royal Mail</strong>, your name and address, to deliver your order.</li>
         <li><strong>Resend</strong>, to send order and request emails.</li>
         <li><strong>Vercel</strong>, which hosts this website.</li>

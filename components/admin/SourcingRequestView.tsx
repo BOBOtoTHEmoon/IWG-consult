@@ -99,7 +99,7 @@ export default function SourcingRequestView({ request: r }: { request: SourcingR
             {r.feeStatus === "unpaid" && (
               <>
                 <p className="text-[15px] text-muted">
-                  Not paid yet. The customer saved their list but hasn&apos;t paid. Once they pay with PayPal, this updates on its own.
+                  Not paid yet. The customer saved their list but hasn&apos;t paid. Once they pay online, this updates on its own.
                 </p>
                 {confirmPaid ? (
                   <div className="flex flex-col gap-2.5 rounded-xl bg-white p-3.5">
@@ -260,7 +260,7 @@ export default function SourcingRequestView({ request: r }: { request: SourcingR
                     </button>
                   </div>
                   {r.status === "going_ahead" && r.feeStatus === "paid" && (
-                    <span className="text-xs text-[#a89d8e]">Remember to refund their £50 in PayPal, then mark it refunded on the left.</span>
+                    <span className="text-xs text-[#a89d8e]">Remember to refund their £50 in PayPal or Stripe (whichever they paid with), then mark it refunded on the left.</span>
                   )}
                 </div>
               )}
