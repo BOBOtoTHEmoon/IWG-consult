@@ -3,6 +3,7 @@ import { gbp } from "@/lib/data";
 import { emailButton, emailLayout, escapeHtml, sendEmail, staffInbox } from "@/lib/email";
 import { royalMailTrackingUrl, type Order } from "@/lib/order-types";
 import { site } from "@/lib/site";
+import { imageUrl } from "./image-url";
 
 const firstName = (o: Order) => o.customerName.trim().split(/\s+/)[0] || "there";
 
@@ -12,7 +13,7 @@ function itemsTable(o: Order) {
       (i) => `
       <tr>
         <td style="padding:10px 0;border-bottom:1px solid #ece3d5;width:64px;vertical-align:top;">
-          ${i.imageUrl ? `<img src="${i.imageUrl}" alt="" width="56" height="56" style="width:56px;height:56px;object-fit:cover;border-radius:10px;display:block;" />` : ""}
+          ${i.imageUrl ? `<img src="${site.url}${imageUrl(i.imageUrl, 128)}" alt="" width="56" height="56" style="width:56px;height:56px;object-fit:cover;border-radius:10px;display:block;" />` : ""}
         </td>
         <td style="padding:10px 12px;border-bottom:1px solid #ece3d5;font-size:15px;vertical-align:top;">
           <strong>${escapeHtml(i.name)}</strong>

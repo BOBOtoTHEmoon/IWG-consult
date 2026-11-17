@@ -34,7 +34,7 @@ export default async function OrderThankYou({ params }: { params: Promise<{ ref:
         <ul className="flex flex-col gap-3.5">
           {order.items.map((i) => (
             <li key={i.id} className="flex items-center gap-3.5">
-              <ProductImage src={i.imageUrl ?? undefined} alt="" tint="#efe5d4" className="h-16 w-14 shrink-0 rounded-xl" />
+              <ProductImage src={i.imageUrl ?? undefined} alt="" tint="#efe5d4" sizes="56px" className="h-16 w-14 shrink-0 rounded-xl" />
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-semibold">{i.name}</span>
                 <span className="text-[13px] text-subtle">

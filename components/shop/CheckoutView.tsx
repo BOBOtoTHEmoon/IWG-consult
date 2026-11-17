@@ -416,7 +416,7 @@ export default function CheckoutView() {
         <ul className="flex flex-col gap-4">
           {items.map((item) => (
             <li key={item.key} className="flex gap-3.5">
-              <ProductImage src={item.image} alt={item.name} tint={item.tint} className="h-20 w-[68px] shrink-0 rounded-xl" />
+              <ProductImage src={item.image} alt={item.name} tint={item.tint} sizes="68px" className="h-20 w-[68px] shrink-0 rounded-xl" />
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-[15px] font-semibold">{item.name}</span>

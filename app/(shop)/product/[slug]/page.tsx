@@ -8,6 +8,7 @@ import { categoryName, gbp } from "@/lib/data";
 import { LOW_STOCK, priceRange } from "@/lib/product-types";
 import { getLiveProduct, getLiveProducts } from "@/lib/products";
 import { site } from "@/lib/site";
+import { imageUrl } from "@/lib/image-url";
 
 // Refresh the cached page at least every minute. Admin saves also refresh it straight away.
 export const revalidate = 60;
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: p.name,
       description,
       url: `/product/${p.slug}`,
-      images: p.images[0] ? [{ url: p.images[0], alt: p.name }] : undefined,
+      images: p.images[0] ? [{ url: imageUrl(p.images[0], 1200, 80)!, width: 1200, alt: p.name }] : undefined,
     },
   };
 }

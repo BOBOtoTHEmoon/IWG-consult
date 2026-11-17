@@ -106,13 +106,13 @@ export default async function HomePage() {
 
         <div className="relative grid h-[340px] flex-1 grid-cols-2 grid-rows-2 gap-3 sm:h-[480px] sm:gap-4 lg:h-[600px]">
           <div className="animate-fade-up row-span-2" style={delay(150)}>
-            <ProductImage src={heroImage(settings.heroImageMain)} alt="" tint="#e6d3bf" eager className="h-full rounded-3xl" />
+            <ProductImage src={heroImage(settings.heroImageMain)} alt="" tint="#e6d3bf" eager sizes="(min-width: 1024px) 25vw, 50vw" className="h-full rounded-3xl" />
           </div>
           <div className="animate-fade-up" style={delay(260)}>
-            <ProductImage src={heroImage(settings.heroImageTop)} alt="" tint="#e9cfc6" eager className="h-full rounded-3xl" />
+            <ProductImage src={heroImage(settings.heroImageTop)} alt="" tint="#e9cfc6" eager sizes="(min-width: 1024px) 25vw, 50vw" className="h-full rounded-3xl" />
           </div>
           <div className="animate-fade-up" style={delay(360)}>
-            <ProductImage src={heroImage(settings.heroImageBottom)} alt="" tint="#d8dfd0" eager className="h-full rounded-3xl" />
+            <ProductImage src={heroImage(settings.heroImageBottom)} alt="" tint="#d8dfd0" eager sizes="(min-width: 1024px) 25vw, 50vw" className="h-full rounded-3xl" />
           </div>
           {featured && (
             <Link
@@ -124,6 +124,7 @@ export default async function HomePage() {
                 src={featured.images[0]}
                 alt=""
                 tint={featured.tint}
+                sizes="64px"
                 className="h-14 w-14 shrink-0 rounded-xl sm:h-16 sm:w-16"
               />
               <span className="flex flex-1 flex-col gap-0.5">
@@ -160,6 +161,7 @@ export default async function HomePage() {
                     src={c.image ? siteImageUrl(c.image) : undefined}
                     alt=""
                     tint={c.tint}
+                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 160px"
                     className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                   />
                   <span className="absolute inset-x-2.5 bottom-2.5 flex h-10 items-center justify-between rounded-xl bg-paper px-3 text-sm font-semibold text-ink sm:inset-x-3.5 sm:bottom-3.5 sm:h-12 sm:rounded-[14px] sm:px-4 sm:text-[15px]">

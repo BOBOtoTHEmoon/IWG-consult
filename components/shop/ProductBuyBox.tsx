@@ -10,6 +10,7 @@ import { CheckIcon } from "../Icons";
 import { showProductPhoto } from "./ProductGallery";
 import { basketKey, useBasket } from "./BasketProvider";
 import QuantityStepper from "./QuantityStepper";
+import { imageUrl as toCachedImage } from "@/lib/image-url";
 
 export default function ProductBuyBox({ product }: { product: ShopProduct }) {
   const router = useRouter();
@@ -146,7 +147,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
                   >
                     {imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={imageUrl} alt="" className="h-8 w-8 rounded-full border border-black/10 object-cover" />
+                      <img src={toCachedImage(imageUrl, 64)} alt="" className="h-8 w-8 rounded-full border border-black/10 object-cover" />
                     ) : (
                       hex && <span className="h-7 w-7 rounded-full border border-black/10" style={{ background: hex }} />
                     )}
