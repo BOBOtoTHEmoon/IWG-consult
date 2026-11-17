@@ -36,7 +36,7 @@ export default function ProductGallery({ images, tint, name }: { images: string[
                 active === i ? "ring-2 ring-ink ring-offset-2 ring-offset-cream" : "opacity-80 hover:opacity-100"
               }`}
             >
-              <ProductImage src={src} alt="" tint={tint} className="h-full w-full" />
+              <ProductImage src={src} alt="" tint={tint} sizes="92px" className="h-full w-full" />
             </button>
           ))}
         </div>
@@ -47,6 +47,7 @@ export default function ProductGallery({ images, tint, name }: { images: string[
         tint={tint}
         label="Product photo"
         eager
+        sizes="(min-width: 1024px) 620px, 100vw"
         className="h-[420px] w-full rounded-3xl sm:h-[600px] lg:h-[760px] lg:w-[620px]"
       />
     </div>

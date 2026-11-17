@@ -72,7 +72,7 @@ export default function BasketDrawer() {
               {items.map((item) => (
                 <li key={item.key} className="flex gap-3.5">
                   <Link href={`/product/${item.slug}`} onClick={close} className="shrink-0">
-                    <ProductImage src={item.image} alt={item.name} tint={item.tint} className="h-24 w-20 rounded-xl" />
+                    <ProductImage src={item.image} alt={item.name} tint={item.tint} sizes="80px" className="h-24 w-20 rounded-xl" />
                   </Link>
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-start justify-between gap-3">

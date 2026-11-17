@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CloseIcon } from "../Icons";
+import { imageUrl } from "@/lib/image-url";
 
 type Purchase = { key: string; name: string; slug: string; image: string | null; place: string; at: string };
 
@@ -100,7 +101,7 @@ export default function RecentPurchases() {
       <Link href={`/product/${current.slug}`} onClick={() => setCurrent(null)} className="flex min-w-0 flex-1 items-center gap-3">
         {current.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={current.image} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+          <img src={imageUrl(current.image, 128)} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
         ) : (
           <span className="h-14 w-14 shrink-0 rounded-xl bg-sand" />
         )}

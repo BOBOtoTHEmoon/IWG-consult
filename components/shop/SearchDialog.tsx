@@ -126,7 +126,7 @@ export default function SearchDialog({ open, onClose }: { open: boolean; onClose
               {results.map((r) => (
                 <li key={r.slug}>
                   <Link href={`/product/${r.slug}`} onClick={close} className="flex items-center gap-3 rounded-2xl p-2 text-ink hover:bg-sand">
-                    <ProductImage src={r.image} alt="" tint={r.tint} className="h-14 w-14 shrink-0 rounded-xl" />
+                    <ProductImage src={r.image} alt="" tint={r.tint} sizes="56px" className="h-14 w-14 shrink-0 rounded-xl" />
                     <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
                     <span className="shrink-0 text-[15px]">{gbp(r.price)}</span>
                   </Link>
