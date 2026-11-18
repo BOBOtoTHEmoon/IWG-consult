@@ -17,6 +17,12 @@ export type ProductOption = {
 };
 export const OPTION_LABELS = ["Colour", "Size", "Length", "Style"] as const;
 
+// A Stripe payment link for customers delivering to one country.
+export type CountryPaymentLink = { country: string; url: string };
+
+// Only real Stripe links are allowed, so a typo can't send customers somewhere else.
+export const isStripeLink = (url: string) => /^https:\/\/buy\.stripe\.com\/[A-Za-z0-9_]+$/.test(url.trim());
+
 // "Colour" -> "colours", "Length" -> "lengths"
 export const optionPlural = (label: string, count: number) =>
   `${count} ${label.toLowerCase()}${count === 1 ? "" : "s"}`;
@@ -39,6 +45,7 @@ export type ShopProduct = {
   freeShipping: boolean;
   shippingMethodIds: string[]; // empty = every delivery option
   paymentMethods: PaymentMethod[]; // how customers can pay for it at checkout
+  paymentLinks: CountryPaymentLink[]; // when set, customers pay through these links instead of the basket
   imagePaths: string[]; // paths inside the product-images bucket
   images: string[]; // public URLs for those paths
   createdAt: string;
@@ -65,12 +72,13 @@ export type ProductRow = {
   free_shipping: boolean | null;
   shipping_method_ids: string[] | null;
   payment_methods: string[] | null;
+  payment_links: { country?: string; url?: string }[] | null;
   images: string[] | null;
   created_at: string;
 };
 
 export const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, option_label_2, options, free_shipping, shipping_method_ids, payment_methods, images, created_at";
+  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, option_label_2, options, free_shipping, shipping_method_ids, payment_methods, payment_links, images, created_at";
 export const productImageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
 
@@ -103,6 +111,9 @@ export function toProduct(row: ProductRow): ShopProduct {
     freeShipping: row.free_shipping ?? false,
     shippingMethodIds: row.shipping_method_ids ?? [],
     paymentMethods: toPaymentMethods(row.payment_methods),
+    paymentLinks: (row.payment_links ?? [])
+      .filter((l) => typeof l?.country === "string" && typeof l?.url === "string" && isStripeLink(l.url))
+      .map((l) => ({ country: l.country!, url: l.url!.trim() })),
     imagePaths,
     images: imagePaths.map(productImageUrl),
     createdAt: row.created_at,

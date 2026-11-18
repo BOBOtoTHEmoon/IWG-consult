@@ -8,7 +8,8 @@ import { guessColour } from "@/lib/colour-names";
 import { compressImage } from "@/lib/compress-image";
 import { categories } from "@/lib/data";
 import { PAYMENT_CHOICES, sameMethods, type PaymentMethod } from "@/lib/payment-methods";
-import { OPTION_LABELS, productImageUrl, slugify, type ShopProduct } from "@/lib/product-types";
+import { COUNTRIES, countryName } from "@/lib/countries";
+import { OPTION_LABELS, isStripeLink, productImageUrl, slugify, type CountryPaymentLink, type ShopProduct } from "@/lib/product-types";
 import type { ShippingMethod, ShippingZone } from "@/lib/shipping-types";
 import { createClient } from "@/lib/supabase/client";
 import { uniqueId } from "@/lib/unique-id";
@@ -67,6 +68,7 @@ export default function ProductForm({
   const [limitMethods, setLimitMethods] = useState((product?.shippingMethodIds.length ?? 0) > 0);
   const [methodIds, setMethodIds] = useState<string[]>(product?.shippingMethodIds ?? []);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(product?.paymentMethods ?? ["paypal"]);
+  const [payLinks, setPayLinks] = useState<CountryPaymentLink[]>(product?.paymentLinks ?? []);
   const [photos, setPhotos] = useState<Photo[]>(
     product ? product.imagePaths.map((path, i) => ({ key: path, path, url: product.images[i] })) : []
   );
@@ -180,6 +182,11 @@ export default function ProductForm({
     // Only keep options that still exist.
     const chosenMethods = methodIds.filter((id) => shipping.methods.some((m) => m.id === id));
     if (limitMethods && chosenMethods.length === 0) return setError("Choose at least one delivery option, or allow all of them.");
+    const linksToSave = payLinks.map((l) => ({ country: l.country, url: l.url.trim() })).filter((l) => l.url);
+    if (linksToSave.some((l) => !isStripeLink(l.url)))
+      return setError("Each payment link must be a Stripe link starting with https://buy.stripe.com/");
+    if (new Set(linksToSave.map((l) => l.country)).size !== linksToSave.length)
+      return setError("Two payment links have the same country. Use each country once.");
     setError("");
     setBusy("saving");
 
@@ -253,6 +260,7 @@ export default function ProductForm({
         free_shipping: freeShipping,
         shipping_method_ids: limitMethods ? chosenMethods : [],
         payment_methods: paymentMethods,
+        payment_links: linksToSave,
         category,
         weight_grams: weight ? Math.max(0, Math.floor(Number(weight))) : null,
         description: description.trim(),
@@ -733,6 +741,64 @@ export default function ProductForm({
                 ? "Customers pay by card through Stripe. It can't be bought in the same order as a PayPal-only product."
                 : "Customers pay with PayPal (or a card through PayPal). It can't be bought in the same order as a Stripe-only product."}
           </span>
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-white p-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[15px] font-semibold">
+              Stripe payment links by country <span className="font-normal text-subtle">(optional)</span>
+            </span>
+            <span className="text-[13px] text-subtle">
+              Add one Stripe link per country. Customers pick their country and pay through that link instead of the basket.
+              Best for products without options. These orders show in Stripe, not in Orders, and stock is not reduced automatically.
+            </span>
+          </div>
+
+          {payLinks.map((l, i) => (
+            <div key={i} className="flex flex-col gap-2 rounded-xl border border-line p-3">
+              <div className="flex gap-2">
+                <select
+                  value={l.country}
+                  onChange={(e) => setPayLinks(payLinks.map((x, j) => (j === i ? { ...x, country: e.target.value } : x)))}
+                  className={input}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setPayLinks(payLinks.filter((_, j) => j !== i))}
+                  aria-label={`Remove ${countryName(l.country)} link`}
+                  className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl border-[1.5px] border-line-strong text-muted"
+                >
+                  <TrashIcon size={18} />
+                </button>
+              </div>
+              <input
+                value={l.url}
+                onChange={(e) => setPayLinks(payLinks.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                placeholder="https://buy.stripe.com/..."
+                inputMode="url"
+                className={input}
+              />
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() =>
+              setPayLinks([
+                ...payLinks,
+                { country: COUNTRIES.find((c) => !payLinks.some((l) => l.country === c.code))?.code ?? "GB", url: "" },
+              ])
+            }
+            className="flex h-12 items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-line-strong text-[15px] font-semibold"
+          >
+            <PlusIcon size={16} /> Add a country link
+          </button>
         </section>
 
         <label className={label}>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CountryPayLinks from "@/components/shop/CountryPayLinks";
 import ProductBuyBox from "@/components/shop/ProductBuyBox";
 import ProductCard from "@/components/shop/ProductCard";
 import ProductGallery from "@/components/shop/ProductGallery";
@@ -130,7 +131,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <p className="whitespace-pre-line text-[17px] leading-relaxed text-muted">{product.description}</p>
             )}
 
-            <ProductBuyBox product={product} />
+            {product.paymentLinks.length > 0 ? <CountryPayLinks product={product} /> : <ProductBuyBox product={product} />}
 
             <div className="flex flex-col rounded-[18px] border border-line bg-paper px-5 py-2">
               {assurances.map(({ icon: Icon, title, body }) => (
