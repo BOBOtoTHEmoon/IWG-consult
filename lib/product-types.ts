@@ -33,6 +33,7 @@ export type ShopProduct = {
   name: string;
   description: string;
   price: number;
+  compareAtPrice: number | null; // the "was" price shown crossed out, when on offer
   stock: number;
   category: string;
   weightGrams: number | null;
@@ -60,6 +61,7 @@ export type ProductRow = {
   name: string;
   description: string;
   price: number | string;
+  compare_at_price: number | string | null;
   stock: number;
   category: string;
   weight_grams: number | null;
@@ -78,7 +80,7 @@ export type ProductRow = {
 };
 
 export const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, stock, category, weight_grams, status, tag, tint, option_label, option_label_2, options, free_shipping, shipping_method_ids, payment_methods, payment_links, images, created_at";
+  "id, slug, name, description, price, compare_at_price, stock, category, weight_grams, status, tag, tint, option_label, option_label_2, options, free_shipping, shipping_method_ids, payment_methods, payment_links, images, created_at";
 export const productImageUrl = (path: string) =>
   `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
 
@@ -90,6 +92,7 @@ export function toProduct(row: ProductRow): ShopProduct {
     name: row.name,
     description: row.description,
     price: Number(row.price),
+    compareAtPrice: row.compare_at_price != null && Number(row.compare_at_price) > 0 ? Number(row.compare_at_price) : null,
     stock: row.stock,
     category: row.category,
     weightGrams: row.weight_grams,

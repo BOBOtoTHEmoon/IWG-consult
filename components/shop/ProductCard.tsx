@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { categoryName, gbp } from "@/lib/data";
+import { categoryName } from "@/lib/data";
 import { LOW_STOCK, optionGroups, optionPlural, priceRange, type ShopProduct } from "@/lib/product-types";
 import ProductImage from "../ProductImage";
+import Price from "./Price";
 
 export default function ProductCard({
   product,
@@ -43,10 +44,7 @@ export default function ProductCard({
         <span className="text-[13px] text-subtle">{categoryName(product.category)}</span>
         <span className="text-base font-semibold sm:text-[17px]">{product.name}</span>
         <span className="flex flex-wrap items-baseline gap-x-2">
-          <span className="text-[15px] sm:text-base">
-            {min !== max ? "From " : ""}
-            {gbp(min)}
-          </span>
+          <Price price={min} was={product.compareAtPrice} from={min !== max} />
           {choices && <span className="text-[13px] text-subtle">{choices}</span>}
         </span>
         {(lowStock || product.sold > 0) && (

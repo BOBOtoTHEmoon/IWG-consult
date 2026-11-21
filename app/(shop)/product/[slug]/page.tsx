@@ -5,7 +5,8 @@ import ProductBuyBox from "@/components/shop/ProductBuyBox";
 import ProductCard from "@/components/shop/ProductCard";
 import ProductGallery from "@/components/shop/ProductGallery";
 import { GlobeIcon, ShieldIcon, TruckIcon } from "@/components/Icons";
-import { categoryName, gbp } from "@/lib/data";
+import Price from "@/components/shop/Price";
+import { categoryName } from "@/lib/data";
 import { LOW_STOCK, priceRange } from "@/lib/product-types";
 import { getLiveProduct, getLiveProducts } from "@/lib/products";
 import { site } from "@/lib/site";
@@ -90,7 +91,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   };
 
   return (
-    <div className="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-20">
+    <div className="mx-auto max-w-[1440px] px-5 sm:px-10 lg:px-12 xl:px-20">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
@@ -104,19 +105,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <span className="text-ink">{product.name}</span>
         </nav>
 
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-[72px]">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10 xl:gap-[72px]">
                    <ProductGallery images={galleryImages} tint={product.tint} name={product.name} />
-          <div className="flex flex-1 flex-col gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
             <div className="flex flex-col gap-3">
               <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-clay">
                 {categoryName(product.category)}
               </span>
-              <h1 className="font-display text-[34px] leading-[1.08] tracking-[-0.015em] sm:text-[46px]">{product.name}</h1>
+              <h1 className="font-display text-[34px] leading-[1.08] tracking-[-0.015em] sm:text-[46px] lg:text-[40px] xl:text-[46px]">{product.name}</h1>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <span className="text-[28px] font-semibold">
-                  {min !== max ? "From " : ""}
-                  {gbp(min)}
-                </span>
+                <Price price={min} was={product.compareAtPrice} from={min !== max} size="lg" />
                 <StockLabel stock={product.stock} />
                 {product.bestSeller && (
                   <span className="flex h-7 items-center rounded-full bg-ink px-3 text-[13px] font-semibold text-cream">Best seller</span>
