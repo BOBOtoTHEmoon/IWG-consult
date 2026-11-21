@@ -13,13 +13,13 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   const announcement = settings.announcementOn ? settings.announcementText.trim() : "";
 
   return (
-    <>
+    <div className="shop-scale contents">
       {announcement && <AnnouncementBar text={announcement} />}
       <Header />
       <main>{children}</main>
       <Footer />
       <AssistantWidget />
       <RecentPurchases />
-    </>
+    </div>
   );
 }

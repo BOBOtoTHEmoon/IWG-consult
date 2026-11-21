@@ -47,6 +47,7 @@ export default function ProductForm({
 
   const [name, setName] = useState(product?.name ?? "");
   const [price, setPrice] = useState(product ? product.price.toFixed(2) : "");
+  const [wasPrice, setWasPrice] = useState(product?.compareAtPrice ? product.compareAtPrice.toFixed(2) : "");
   const [stock, setStock] = useState(product ? String(product.stock) : "");
   const [category, setCategory] = useState(product?.category ?? categories[0].slug);
   const [weight, setWeight] = useState(product?.weightGrams ? String(product.weightGrams) : "");
@@ -150,6 +151,8 @@ export default function ProductForm({
     setNotice("");
     if (!name.trim()) return setError("Add a product name.");
     if (!(Number(price) > 0)) return setError("Add a price greater than £0.");
+    if (wasPrice.trim() && !(Number(wasPrice) > Number(price)))
+      return setError("The was price must be higher than the price, or left blank.");
     if (status === "live" && photos.length === 0) return setError("Add at least one photo before it goes live.");
 
     const twoMode = hasOptions && secondLabel !== null;
@@ -252,6 +255,7 @@ export default function ProductForm({
       const row = {
         name: name.trim(),
         price: Number(Number(price).toFixed(2)),
+        compare_at_price: wasPrice.trim() ? Number(Number(wasPrice).toFixed(2)) : null,
         // With options, the product's stock is the total of all its options.
         stock: hasOptions ? optionsToSave.reduce((n, o) => n + o.stock, 0) : Math.max(0, Math.floor(Number(stock) || 0)),
         options: optionsToSave,
@@ -439,6 +443,14 @@ export default function ProductForm({
             </label>
           )}
         </div>
+
+        <label className={label}>
+          <span>
+            Was price (£) <span className="font-normal text-subtle">(optional)</span>
+          </span>
+          <input value={wasPrice} onChange={(e) => setWasPrice(e.target.value)} inputMode="decimal" placeholder="e.g. 200.00" className={input} />
+          <span className="text-[13px] font-normal text-subtle">Shown crossed out next to the price. Leave blank if it&apos;s not on offer.</span>
+        </label>
 
         <div className="grid grid-cols-2 gap-3">
           <label className={label}>

@@ -4,7 +4,8 @@ import Reveal from "@/components/Reveal";
 import NewsletterForm from "@/components/shop/NewsletterForm";
 import ProductCard from "@/components/shop/ProductCard";
 import { ArrowRightIcon, CheckIcon, ShieldIcon, TruckIcon } from "@/components/Icons";
-import { gbp } from "@/lib/data";
+import Price from "@/components/shop/Price";
+import { priceRange } from "@/lib/product-types";
 import { getLiveProductById, getLiveProducts } from "@/lib/products";
 import { getCategories, getSiteSettings } from "@/lib/site-content";
 import { siteImageUrl } from "@/lib/site-content-types";
@@ -71,10 +72,10 @@ export default async function HomePage() {
       />
 
       {/* Hero */}
-      <section className="mx-auto flex max-w-[1440px] flex-col gap-10 px-5 pb-16 pt-8 sm:px-10 lg:flex-row lg:items-center lg:gap-[72px] lg:px-20 lg:pb-24 lg:pt-[72px]">
-        <div className="flex flex-col gap-5 lg:w-[600px] lg:shrink-0 lg:gap-7">
+      <section className="mx-auto flex max-w-[1440px] flex-col gap-10 px-5 pb-16 pt-8 sm:px-10 lg:flex-row lg:items-center lg:gap-12 lg:px-20 lg:pb-24 lg:pt-[72px] xl:gap-[72px]">
+        <div className="flex flex-col gap-5 lg:w-[46%] lg:shrink-0 lg:gap-7 xl:w-[600px]">
           <h1
-            className="animate-fade-up font-display text-[44px] font-normal leading-[1.05] tracking-[-0.01em] sm:text-6xl lg:text-[76px]"
+            className="animate-fade-up font-display text-[44px] font-normal leading-[1.05] tracking-[-0.01em] sm:text-6xl lg:text-[64px] xl:text-[76px]"
             style={delay(0)}
           >
             <Headline text={settings.heroHeadline} highlight={settings.heroHighlight} />
@@ -104,7 +105,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="relative grid h-[340px] flex-1 grid-cols-2 grid-rows-2 gap-3 sm:h-[480px] sm:gap-4 lg:h-[600px]">
+        <div className="relative grid h-[340px] min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-3 sm:h-[480px] sm:gap-4 lg:h-[600px]">
           <div className="animate-fade-up row-span-2" style={delay(150)}>
             <ProductImage src={heroImage(settings.heroImageMain)} alt="" tint="#e6d3bf" eager sizes="(min-width: 1024px) 25vw, 50vw" className="h-full rounded-3xl" />
           </div>
@@ -118,7 +119,7 @@ export default async function HomePage() {
             <Link
               href={`/product/${featured.slug}`}
               style={delay(650)}
-              className="animate-pop-in absolute bottom-3 left-3 right-3 flex items-center gap-3 rounded-2xl bg-paper p-3 text-ink shadow-[0_18px_40px_rgba(60,30,10,0.16)] transition-transform hover:-translate-y-0.5 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[300px] sm:gap-3.5 sm:rounded-[18px] sm:p-3.5 xl:bottom-10 xl:left-[-44px]"
+              className="animate-pop-in absolute bottom-3 left-3 right-3 flex items-center gap-3 rounded-2xl bg-paper p-3 text-ink shadow-[0_18px_40px_rgba(60,30,10,0.16)] transition-transform hover:-translate-y-0.5 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[360px] sm:gap-3.5 sm:rounded-[18px] sm:p-3 xl:bottom-10 xl:left-[-44px]"
             >
               <ProductImage
                 src={featured.images[0]}
@@ -129,8 +130,13 @@ export default async function HomePage() {
               />
               <span className="flex flex-1 flex-col gap-0.5">
                 <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-clay">New in</span>
-                <span className="text-[15px] font-semibold">{featured.name}</span>
-                <span className="text-sm text-muted">{gbp(featured.price)}</span>
+                <span className="line-clamp-2 text-[15px] font-semibold leading-snug">{featured.name}</span>
+                <Price
+                  price={priceRange(featured).min}
+                  was={featured.compareAtPrice}
+                  from={priceRange(featured).min !== priceRange(featured).max}
+                  size="sm"
+                />
               </span>
             </Link>
           )}
@@ -150,18 +156,18 @@ export default async function HomePage() {
             </Link>
           </Reveal>
           <Reveal delay={100}>
-            <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-2 after:w-2 after:shrink-0 after:content-[''] sm:mx-0 sm:grid sm:grid-cols-3 sm:scroll-px-0 sm:gap-4 sm:overflow-visible sm:px-0 sm:after:hidden lg:grid-cols-5 lg:gap-5">
+            <div className="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] after:w-2 after:shrink-0 after:content-[''] sm:-mx-10 sm:scroll-px-10 sm:gap-4 sm:px-10 lg:mx-0 lg:grid lg:grid-cols-5 lg:gap-5 lg:overflow-visible lg:scroll-px-0 lg:px-0 lg:pb-0 lg:after:hidden [&::-webkit-scrollbar]:hidden">
               {homeCategories.map((c) => (
                 <Link
                   key={c.slug}
                   href={`/shop?category=${c.slug}`}
-                  className="group relative h-[190px] w-[160px] shrink-0 snap-start overflow-hidden rounded-2xl sm:h-[260px] sm:w-auto sm:rounded-[20px] lg:h-[330px]"
+                  className="group relative h-[190px] w-[160px] shrink-0 snap-start overflow-hidden rounded-2xl sm:h-[270px] sm:w-[230px] sm:rounded-[20px] lg:aspect-[5/6] lg:h-auto lg:w-auto"
                 >
                   <ProductImage
                     src={c.image ? siteImageUrl(c.image) : undefined}
                     alt=""
                     tint={c.tint}
-                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 160px"
+                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 230px, 160px"
                     className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                   />
                   <span className="absolute inset-x-2.5 bottom-2.5 flex h-10 items-center justify-between rounded-xl bg-paper px-3 text-sm font-semibold text-ink sm:inset-x-3.5 sm:bottom-3.5 sm:h-12 sm:rounded-[14px] sm:px-4 sm:text-[15px]">
@@ -193,7 +199,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-4 sm:gap-y-8 lg:grid-cols-4 lg:gap-6">
             {newArrivals.map((p, i) => (
               <Reveal key={p.slug} delay={i * 90}>
-                <ProductCard product={p} imageClass="h-[190px] sm:h-[300px] lg:h-[380px]" />
+                <ProductCard product={p} imageClass="h-[190px] sm:h-[300px] lg:h-[320px]" />
               </Reveal>
             ))}
           </div>

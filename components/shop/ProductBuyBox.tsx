@@ -7,6 +7,7 @@ import { gbp } from "@/lib/data";
 import { PAYMENT_METHODS, payPhrase, sharedMethods } from "@/lib/payment-methods";
 import { LOW_STOCK, optionGroups, optionPrice, priceRange, variantLabelOf, type ProductOption, type ShopProduct } from "@/lib/product-types";
 import { CheckIcon } from "../Icons";
+import Price from "./Price";
 import { showProductPhoto } from "./ProductGallery";
 import { basketKey, useBasket } from "./BasketProvider";
 import QuantityStepper from "./QuantityStepper";
@@ -159,7 +160,11 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
           </fieldset>
         ))}
 
-      {pricesVary && <p className="text-[28px] font-semibold">{gbp(price)}</p>}
+      {pricesVary && (
+        <p>
+          <Price price={price} was={product.compareAtPrice} size="lg" />
+        </p>
+      )}
 
       {payConflict ? (
         <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-paper p-5">
@@ -187,7 +192,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
         </div>
       ) : (
         <>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <QuantityStepper value={qty} max={canAdd} onChange={(q) => setQty(Math.max(1, Math.min(canAdd, q)))} />
             <button
               onClick={() => {
@@ -196,7 +201,7 @@ export default function ProductBuyBox({ product }: { product: ShopProduct }) {
                 open();
                 setTimeout(() => setAdded(false), 2000);
               }}
-              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-clay text-base font-semibold text-white transition-colors hover:bg-clay-dark"
+              className="flex h-14 min-w-[200px] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-clay px-5 text-base font-semibold text-white transition-colors hover:bg-clay-dark"
             >
               {added ? (
                 <>

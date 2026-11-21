@@ -29,6 +29,14 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Shop pages on laptops, desktops and iPad landscape show at 80% scale, like 80% browser zoom.
+   Phones and iPad portrait stay at full size. The admin is not affected. */
+@media (min-width: 1024px) {
+  html:has(.shop-scale) {
+    zoom: 0.8;
+  }
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-ink);
