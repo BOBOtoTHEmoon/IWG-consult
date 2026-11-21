@@ -29,11 +29,20 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Shop pages on laptops, desktops and iPad landscape show at 80% scale, like 80% browser zoom.
-   Phones and iPad portrait stay at full size. The admin is not affected. */
+/* Shop pages show slightly zoomed out, like browser zoom: 80% on laptops, desktops and
+   iPad landscape, 85% on phones and iPad portrait. The admin is not affected. */
 @media (min-width: 1024px) {
   html:has(.shop-scale) {
     zoom: 0.8;
+  }
+}
+@media (max-width: 1023px) {
+  html:has(.shop-scale) {
+    zoom: 0.85;
+  }
+  /* Keep typed text at 16px on screen so iPhones and iPads don't zoom in when a field is tapped. */
+  html:has(.shop-scale) :is(input, select, textarea) {
+    font-size: calc(16px / 0.85) !important;
   }
 }
 

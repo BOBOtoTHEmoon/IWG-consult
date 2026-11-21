@@ -119,18 +119,18 @@ export default async function HomePage() {
             <Link
               href={`/product/${featured.slug}`}
               style={delay(650)}
-              className="animate-pop-in absolute bottom-3 left-3 right-3 flex items-center gap-3 rounded-2xl bg-paper p-3 text-ink shadow-[0_18px_40px_rgba(60,30,10,0.16)] transition-transform hover:-translate-y-0.5 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[360px] sm:gap-3.5 sm:rounded-[18px] sm:p-3 xl:bottom-10 xl:left-[-44px]"
+              className="animate-pop-in absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2.5 rounded-xl bg-paper p-2 text-ink shadow-[0_18px_40px_rgba(60,30,10,0.16)] transition-transform hover:-translate-y-0.5 sm:bottom-6 sm:left-6 sm:right-auto sm:w-[360px] sm:gap-3.5 sm:rounded-[18px] sm:p-3 xl:bottom-10 xl:left-[-44px]"
             >
               <ProductImage
                 src={featured.images[0]}
                 alt=""
                 tint={featured.tint}
                 sizes="64px"
-                className="h-14 w-14 shrink-0 rounded-xl sm:h-16 sm:w-16"
+                className="h-11 w-11 shrink-0 rounded-lg sm:h-16 sm:w-16 sm:rounded-xl"
               />
-              <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-clay">New in</span>
-                <span className="line-clamp-2 text-[15px] font-semibold leading-snug">{featured.name}</span>
+              <span className="flex min-w-0 flex-1 flex-col sm:gap-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-clay sm:text-[11px]">New in</span>
+                <span className="line-clamp-1 text-[13px] font-semibold leading-snug sm:line-clamp-2 sm:text-[15px]">{featured.name}</span>
                 <Price
                   price={priceRange(featured).min}
                   was={featured.compareAtPrice}
